@@ -2,7 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Enums\CommitStatus;
+use App\Enums\PollDuration;
+use App\Enums\SnippetLanguage;
 use App\Models\Commit;
+use App\Models\PollVote;
 use App\Models\User;
 
 it('requires authentication to download personal data', function (): void {
@@ -49,6 +53,7 @@ it('downloads a versioned private JSON file with an explicit profile and empty l
             'updated_at' => $user->updated_at->toIso8601String(),
         ],
         'commits' => [],
+        'poll_votes' => [],
         'following' => [],
     ]);
     expect($user->fresh()->getAttributes())->toBe($original);
@@ -83,6 +88,12 @@ it('exports only the signed-in users live commits including replies and all mode
         'parent_id' => null,
         'body' => $approved->body,
         'status' => 'approved',
+        'type' => 'text',
+        'release' => null,
+        'poll' => null,
+        'snippet' => null,
+        'quoted_commit_id' => null,
+        'accepted_answer_id' => null,
         'created_at' => $approved->created_at->toIso8601String(),
         'updated_at' => $approved->updated_at->toIso8601String(),
     ])
@@ -91,6 +102,61 @@ it('exports only the signed-in users live commits including replies and all mode
         ->and($commits[$reply->id]['parent_id'])->toBe($parent->id)
         ->and($commits[$survivingReply->id]['parent_id'])->toBe($deleted->id)
         ->and($response->streamedContent())->not->toContain($deleted->body, $deletedReply->body, $parent->body);
+});
+
+it('exports the type of each commit along with its data', function (): void {
+    $user = User::factory()->create();
+    $quoted = Commit::factory()->create();
+    $release = Commit::factory()->for($user)->release(['project' => 'pestphp/pest', 'version' => 'v5.0.0', 'url' => null, 'notes' => 'Faster.'])->create();
+    $poll = Commit::factory()->for($user)->poll(['duration' => PollDuration::ThreeDays, 'closes_at' => '2026-10-18 12:00:00'], ['Tabs', 'Spaces'])->create();
+    $snippet = Commit::factory()->for($user)->snippet(['language' => SnippetLanguage::Php, 'filename' => 'app.php', 'code' => "<?php\n\necho 1;"])->create();
+    $quote = Commit::factory()->for($user)->quote($quoted)->create();
+    $question = Commit::factory()->for($user)->question()->create();
+    $answer = Commit::factory()->for($question, 'parent')->create();
+    $question->update(['accepted_answer_id' => $answer->id]);
+
+    $response = $this->actingAs($user)->get(route('export'));
+    $commits = collect(json_decode($response->streamedContent(), true, flags: JSON_THROW_ON_ERROR)['commits'])->keyBy('id');
+
+    expect($commits[$release->id])->toMatchArray([
+        'type' => 'release',
+        'release' => ['project' => 'pestphp/pest', 'version' => 'v5.0.0', 'url' => null, 'notes' => 'Faster.'],
+        'poll' => null,
+        'snippet' => null,
+    ])
+        ->and($commits[$poll->id])->toMatchArray([
+            'type' => 'poll',
+            'poll' => ['options' => ['Tabs', 'Spaces'], 'duration_minutes' => 4320, 'closes_at' => '2026-10-18T12:00:00+00:00'],
+            'release' => null,
+        ])
+        ->and($commits[$snippet->id])->toMatchArray([
+            'type' => 'snippet',
+            'snippet' => ['language' => 'php', 'filename' => 'app.php', 'code' => "<?php\n\necho 1;"],
+        ])
+        ->and($commits[$quote->id])->toMatchArray(['type' => 'quote', 'quoted_commit_id' => $quoted->id])
+        ->and($commits[$question->id])->toMatchArray(['type' => 'question', 'accepted_answer_id' => $answer->id])
+        ->and($response->streamedContent())->not->toContain($quoted->body);
+});
+
+it('exports the poll votes of the user on polls everyone can still see', function (): void {
+    $user = User::factory()->create();
+    $poll = Commit::factory()->poll([], ['Tabs', 'Spaces'])->create();
+    $deletedPoll = Commit::factory()->poll([], ['Vim', 'Emacs'])->create();
+    $rejectedPoll = Commit::factory()->poll([], ['Light', 'Dark'])->create();
+    $vote = PollVote::factory()->create(['user_id' => $user->id, 'poll_option_id' => $poll->poll?->options->last()?->id]);
+    PollVote::factory()->create(['user_id' => $user->id, 'poll_option_id' => $deletedPoll->poll?->options->first()?->id]);
+    PollVote::factory()->create(['user_id' => $user->id, 'poll_option_id' => $rejectedPoll->poll?->options->first()?->id]);
+    PollVote::factory()->create(['poll_option_id' => $poll->poll?->options->first()?->id]);
+    $deletedPoll->delete();
+    $rejectedPoll->update(['status' => CommitStatus::Rejected]);
+
+    $response = $this->actingAs($user)->get(route('export'));
+    $data = json_decode($response->streamedContent(), true, flags: JSON_THROW_ON_ERROR);
+
+    expect($data['poll_votes'])->toBe([
+        ['commit_id' => $poll->id, 'option' => 'Spaces', 'created_at' => $vote->created_at->toIso8601String()],
+    ])
+        ->and($response->streamedContent())->not->toContain('Vim', 'Emacs', 'Light', 'Dark');
 });
 
 it('exports following usernames without private identity fields or followers', function (): void {
