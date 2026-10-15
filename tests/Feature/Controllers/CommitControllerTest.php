@@ -133,7 +133,7 @@ it('rejects unknown types', function (mixed $type): void {
     'array' => [['release']],
 ]);
 
-it('only allows text replies', function (): void {
+it('only allows text replies', function (string $type, Closure $data): void {
     $parent = Commit::factory()->create();
 
     $response = $this->actingAs(User::factory()->create())
@@ -141,14 +141,20 @@ it('only allows text replies', function (): void {
         ->post(route('commit.store'), [
             'body' => 'Shipped a fix for this.',
             'parent_id' => $parent->id,
-            'type' => 'release',
-            'release' => ['project' => 'pestphp/pest', 'version' => 'v5.0.1'],
+            'type' => $type,
+            ...$data(),
         ]);
 
     $response->assertSessionHasErrors('type');
 
     expect($parent->replies()->count())->toBe(0);
-});
+})->with([
+    'release' => ['release', fn (): array => ['release' => ['project' => 'pestphp/pest', 'version' => 'v5.0.1']]],
+    'poll' => ['poll', fn (): array => ['poll' => ['options' => ['Yes', 'No'], 'duration' => 1440]]],
+    'snippet' => ['snippet', fn (): array => ['snippet' => ['language' => 'php', 'code' => 'echo 1;']]],
+    'quote' => ['quote', fn (): array => ['quote' => ['commit_id' => Commit::factory()->create()->id]]],
+    'question' => ['question', fn (): array => []],
+]);
 
 it('creates text commits unless told otherwise', function (array $type): void {
     $user = User::factory()->create();

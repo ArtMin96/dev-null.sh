@@ -24,6 +24,8 @@ final readonly class UpdateCommitStatuses
     }
 
     /**
+     * Rejecting an accepted answer withdraws the notification of its acceptance.
+     *
      * @param  array<int, string>  $commitIds
      */
     public function handle(array $commitIds, CommitStatus $status, ?string $reason = null, bool $onlyPending = false): void
@@ -67,6 +69,13 @@ final readonly class UpdateCommitStatuses
                 $this->createMentionNotifications->handle(...$commits);
                 $this->createQuoteNotifications->handle(...$commits);
                 $this->updatePollsClosesAt->handle(...$commits);
+            }
+
+            if ($status === CommitStatus::Rejected) {
+                Notification::query()
+                    ->where('type', NotificationType::AnswerAccepted)
+                    ->whereIn('commit_id', Commit::query()->whereIn('accepted_answer_id', $commits->modelKeys())->select('id'))
+                    ->delete();
             }
         });
     }

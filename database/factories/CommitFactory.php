@@ -86,4 +86,11 @@ final class CommitFactory extends Factory
             'quoted_commit_id' => $quoted ?? Commit::factory(),
         ]);
     }
+
+    public function question(): self
+    {
+        return $this->state(fn (array $attributes): array => [
+            'type' => CommitType::Question,
+        ]);
+    }
 }

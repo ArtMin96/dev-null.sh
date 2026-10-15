@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Http\Controllers\BookmarkController;
 use App\Http\Controllers\Cli\ScriptController;
+use App\Http\Controllers\CommitAnswerAcceptanceController;
+use App\Http\Controllers\CommitAnswerRevocationController;
 use App\Http\Controllers\CommitApprovalController;
 use App\Http\Controllers\CommitController;
 use App\Http\Controllers\CommitImageController;
@@ -94,6 +96,12 @@ Route::middleware('auth')->group(function (): void {
     // Poll votes...
     Route::post('commits/{commit}/poll/votes', CommitPollVoteController::class)
         ->name('commit-poll-vote.store');
+
+    // Accepted answers...
+    Route::put('commits/{commit}/accepted-answer', CommitAnswerAcceptanceController::class)
+        ->name('accepted-answer.store');
+    Route::delete('commits/{commit}/accepted-answer', CommitAnswerRevocationController::class)
+        ->name('accepted-answer.destroy');
 
     // Notifications...
     Route::get('notifications', [NotificationController::class, 'index'])->name('notification.index');

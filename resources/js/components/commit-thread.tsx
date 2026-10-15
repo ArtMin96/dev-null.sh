@@ -17,6 +17,12 @@ import {
     imageErrorFrom,
 } from '@/components/commit-image-picker';
 import { CommitImages } from '@/components/commit-images';
+import { AcceptAnswerButton } from '@/components/commit-types/accept-answer-button';
+import type { AcceptedAnswer } from '@/components/commit-types/accepted-answer';
+import {
+    AcceptedAnswerBadge,
+    AcceptedAnswerContext,
+} from '@/components/commit-types/accepted-answer';
 import { CommitTypeContent } from '@/components/commit-types/commit-type-content';
 import { QuoteButton } from '@/components/commit-types/quote-button';
 import { CopyLinkButton } from '@/components/copy-link-button';
@@ -180,22 +186,24 @@ export function CommitThread({
     commit,
     initialReplies,
     actions,
+    acceptedAnswer,
 }: {
     commit: Commit;
     initialReplies?: CursorPaginated<ThreadCommit>;
     actions?: ReactNode;
+    acceptedAnswer?: AcceptedAnswer;
 }) {
     const thread = useThread(commit, initialReplies);
 
     return (
-        <>
+        <AcceptedAnswerContext value={acceptedAnswer ?? null}>
             <ThreadActions
                 thread={thread}
                 actions={actions}
                 hasKeyboardShortcuts
             />
             <ThreadReplies thread={thread} depth={0} />
-        </>
+        </AcceptedAnswerContext>
     );
 }
 
@@ -531,6 +539,7 @@ function CommitReply({
                                 {reply.status}
                             </span>
                         )}
+                        <AcceptedAnswerBadge reply={reply} />
                         {isOwn && (
                             <button
                                 type="button"
@@ -585,7 +594,10 @@ function CommitReply({
                             </Button>
                         </div>
                     ) : (
-                        <ThreadActions thread={thread} />
+                        <ThreadActions
+                            thread={thread}
+                            actions={<AcceptAnswerButton reply={reply} />}
+                        />
                     )}
                 </div>
             </div>

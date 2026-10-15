@@ -131,6 +131,25 @@ it('shows a quote with the commit it quotes, and as the ancestor of its replies'
             ->where('ancestors.0.quoted_commit.id', $quoted->id));
 });
 
+it('shows the type of the commit it quotes, never its content', function (Closure $quoted, string $type, string $content): void {
+    $quoted = $quoted();
+    $quote = Commit::factory()->quote($quoted)->create();
+
+    $this->actingAs(User::factory()->create())
+        ->get(route('commit.show', [$quote->user, $quote]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('commit.quoted_commit.id', $quoted->id)
+            ->where('commit.quoted_commit.type', $type)
+            ->missing("commit.quoted_commit.{$content}"));
+})->with([
+    'release' => [fn (): Commit => Commit::factory()->release()->create(), 'release', 'release'],
+    'poll' => [fn (): Commit => Commit::factory()->poll()->create(), 'poll', 'poll'],
+    'snippet' => [fn (): Commit => Commit::factory()->snippet()->create(), 'snippet', 'snippet'],
+    'quote' => [fn (): Commit => Commit::factory()->quote()->create(), 'quote', 'quoted_commit'],
+    'question' => [fn (): Commit => Commit::factory()->question()->create(), 'question', 'is_answered'],
+]);
+
 it('shows quotes of commits that are no longer available without them', function (Closure $hide): void {
     $quoted = Commit::factory()->create();
     $quote = Commit::factory()->quote($quoted)->create();

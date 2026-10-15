@@ -6,6 +6,7 @@ use App\Enums\Log;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Models\Commit;
 use App\Models\LinkPreview;
+use App\Models\PollVote;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
@@ -323,6 +324,42 @@ it('includes the releases of commits', function (Log $log): void {
                 'notes' => null,
             ]));
 })->with(Log::cases());
+
+it('loads a log of every commit type with a bounded number of queries', function (): void {
+    $viewer = User::factory()->create();
+    $this->actingAs($viewer);
+
+    $commitOfEveryType = function () use ($viewer): void {
+        Commit::factory()->create();
+        Commit::factory()->release()->create();
+        PollVote::factory()->create(['user_id' => $viewer->id, 'poll_option_id' => Commit::factory()->poll()->create()->poll?->options->first()?->id]);
+        Commit::factory()->snippet()->create();
+        Commit::factory()->quote()->create();
+        $question = Commit::factory()->question()->create();
+        $question->update(['accepted_answer_id' => Commit::factory()->for($question, 'parent')->create()->id]);
+    };
+
+    $commitOfEveryType();
+
+    DB::enableQueryLog();
+    $this->get(route('log.show', Log::Everyone))->assertOk();
+    $queryCount = count(DB::getQueryLog());
+
+    $commitOfEveryType();
+    $commitOfEveryType();
+    DB::flushQueryLog();
+
+    $commits = collect($this->get(route('log.show', Log::Everyone))->assertOk()->inertiaProps('commits.data'))->keyBy('type');
+
+    expect(count(DB::getQueryLog()))->toBe($queryCount)
+        ->and($commits->keys()->sort()->values()->all())->toBe(['poll', 'question', 'quote', 'release', 'snippet', 'text'])
+        ->and($commits['release']['release'])->toHaveKeys(['project', 'version'])
+        ->and($commits['poll']['poll']['voted_option_id'])->toBeString()
+        ->and($commits['poll']['poll']['options'][0]['votes_count'])->toBe(1)
+        ->and($commits['snippet']['snippet']['highlighted_html'])->toContain('hl-keyword')
+        ->and($commits['quote']['quoted_commit']['user'])->toHaveKey('username')
+        ->and($commits['question']['is_answered'])->toBeTrue();
+});
 
 it('defers suggested users to follow', function (): void {
     $user = User::factory()->create();

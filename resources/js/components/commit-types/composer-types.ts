@@ -1,7 +1,8 @@
 import type { LucideIcon } from 'lucide-react';
-import { ChartBar, Code, Tag } from 'lucide-react';
+import { ChartBar, CircleQuestionMark, Code, Tag } from 'lucide-react';
 import type { ComponentType } from 'react';
 import { PollFields } from '@/components/commit-types/poll-fields';
+import { QuestionFields } from '@/components/commit-types/question-fields';
 import { ReleaseFields } from '@/components/commit-types/release-fields';
 import { SnippetFields } from '@/components/commit-types/snippet-fields';
 import type { CommitType } from '@/types';
@@ -55,5 +56,12 @@ export const composerTypes: ComposerType[] = [
         icon: Code,
         placeholder: 'What does this code do?',
         Fields: SnippetFields,
+    },
+    {
+        type: 'question',
+        label: 'Question',
+        icon: CircleQuestionMark,
+        placeholder: 'What do you want to ask?',
+        Fields: QuestionFields,
     },
 ];

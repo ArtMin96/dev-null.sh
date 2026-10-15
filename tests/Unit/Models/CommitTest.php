@@ -24,6 +24,7 @@ test('to array', function (): void {
             'link_preview_id',
             'type',
             'quoted_commit_id',
+            'accepted_answer_id',
             'body_segments',
         ]);
 });

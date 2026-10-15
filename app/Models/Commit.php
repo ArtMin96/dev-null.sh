@@ -47,6 +47,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property-read Snippet|null $snippet
  * @property-read string|null $quoted_commit_id
  * @property-read Commit|null $quotedCommit
+ * @property-read string|null $accepted_answer_id
+ * @property-read Commit|null $acceptedAnswer
+ * @property-read bool $is_answered
  */
 #[UseEloquentBuilder(CommitBuilder::class)]
 final class Commit extends Model
@@ -81,6 +84,7 @@ final class Commit extends Model
             'updated_at' => 'datetime',
             'deleted_at' => 'datetime',
             'quoted_commit_id' => 'string',
+            'accepted_answer_id' => 'string',
         ];
     }
 
@@ -217,6 +221,16 @@ final class Commit extends Model
     public function quotedCommit(): BelongsTo
     {
         return $this->belongsTo(self::class, 'quoted_commit_id');
+    }
+
+    /**
+     * The reply the author of a question accepted as its answer.
+     *
+     * @return BelongsTo<Commit, $this>
+     */
+    public function acceptedAnswer(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'accepted_answer_id');
     }
 
     /**

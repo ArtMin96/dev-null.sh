@@ -8,7 +8,9 @@ import { CommitBody } from '@/components/commit-body';
 import { CommitImages } from '@/components/commit-images';
 import { CommitStarButton } from '@/components/commit-star-button';
 import { CommitThread } from '@/components/commit-thread';
+import { useAcceptedAnswer } from '@/components/commit-types/accepted-answer';
 import { CommitTypeContent } from '@/components/commit-types/commit-type-content';
+import { QuestionBadge } from '@/components/commit-types/question-badge';
 import { GraphRail } from '@/components/graph-rail';
 import { LinkPreview } from '@/components/link-preview';
 import { Button } from '@/components/ui/button';
@@ -57,6 +59,7 @@ export function CommitCard({
     const [deletion, setDeletion] = useState<
         'idle' | 'confirming' | 'deleting'
     >('idle');
+    const acceptedAnswer = useAcceptedAnswer(commit);
 
     const isOwn = commit.user_id === auth.user.id;
     const isDeletable = isOwn && canDelete;
@@ -178,6 +181,13 @@ export function CommitCard({
                                     {commit.status}
                                 </span>
                             )}
+                            {commit.type === 'question' && (
+                                <QuestionBadge
+                                    isAnswered={
+                                        acceptedAnswer.answerId !== null
+                                    }
+                                />
+                            )}
 
                             <span className="relative ml-auto flex shrink-0 items-center self-center">
                                 <Link
@@ -289,6 +299,7 @@ export function CommitCard({
                                 <CommitThread
                                     commit={commit}
                                     initialReplies={initialReplies}
+                                    acceptedAnswer={acceptedAnswer}
                                     actions={
                                         <>
                                             <CommitStarButton

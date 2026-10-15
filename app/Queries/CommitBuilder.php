@@ -91,6 +91,7 @@ final class CommitBuilder extends Builder
                     $quotedCommit->getQuery()->withTrashed()->visibleTo($viewer)->with('user');
                 },
             ])
+            ->withExists(['acceptedAnswer as is_answered' => fn (self $answer): self => $answer->approved()])
             ->afterQuery(fn (Collection $commits): Collection => $this->markOwnPolls($commits, $viewer));
     }
 

@@ -94,10 +94,21 @@ final class NotificationFactory extends Factory
     {
         return $this->state(fn (array $attributes): array => [
             'type' => NotificationType::AnswerAccepted,
-            'commit_id' => fn (array $attributes): string => Commit::factory()
-                ->for(User::query()->whereKey($attributes['actor_id'])->sole())
-                ->create()
-                ->id,
+            'commit_id' => function (array $attributes): string {
+                $question = Commit::factory()
+                    ->question()
+                    ->for(User::query()->whereKey($attributes['actor_id'])->sole())
+                    ->create();
+
+                $answer = Commit::factory()
+                    ->for(User::query()->whereKey($attributes['recipient_id'])->sole())
+                    ->for($question, 'parent')
+                    ->create();
+
+                $question->update(['accepted_answer_id' => $answer->id]);
+
+                return $question->id;
+            },
         ]);
     }
 

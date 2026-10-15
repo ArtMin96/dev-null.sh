@@ -15,7 +15,8 @@ final readonly class DeleteCommit
 {
     /**
      * Soft deleting keeps the row for its replies and quotes, so its notifications, the notifications about its replies
-     * and quotes, and its images are removed here instead of by the foreign key.
+     * and quotes, and its images are removed here instead of by the foreign key. A deleted answer is no longer the
+     * accepted one of its question, and the notification of its acceptance goes along with it.
      */
     public function handle(Commit $commit): void
     {
@@ -34,7 +35,12 @@ final readonly class DeleteCommit
                 ->orWhere(fn (NotificationBuilder $query): NotificationBuilder => $query
                     ->where('type', NotificationType::Quoted)
                     ->whereIn('commit_id', $commit->quotes()->select('id')))
+                ->orWhere(fn (NotificationBuilder $query): NotificationBuilder => $query
+                    ->where('type', NotificationType::AnswerAccepted)
+                    ->whereIn('commit_id', Commit::query()->where('accepted_answer_id', $commit->id)->select('id')))
                 ->delete();
+
+            Commit::query()->where('accepted_answer_id', $commit->id)->update(['accepted_answer_id' => null]);
 
             $imagePaths = $commit->images()->pluck('path')->all();
 

@@ -6,6 +6,7 @@ use App\Enums\CommitStatus;
 use App\Models\Commit;
 use App\Models\LinkPreview;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 beforeEach(function (): void {
     config(['app.admins' => ['admin']]);
@@ -46,6 +47,41 @@ it('renders the release of pending commits', function (): void {
             ->where('commits.data.0.type', 'release')
             ->where('commits.data.0.release.project', 'pestphp/pest')
             ->where('commits.data.0.release.version', 'v5.0.0'));
+});
+
+it('renders every commit type in the queue with a bounded number of queries', function (): void {
+    $this->actingAs(User::factory()->create(['username' => 'admin']));
+
+    $pendingCommitOfEveryType = function (): void {
+        Commit::factory()->pending()->create();
+        Commit::factory()->pending()->release()->create();
+        Commit::factory()->pending()->poll()->create();
+        Commit::factory()->pending()->snippet()->create();
+        Commit::factory()->pending()->quote()->create();
+        Commit::factory()->pending()->question()->create();
+    };
+
+    $pendingCommitOfEveryType();
+
+    DB::enableQueryLog();
+    $this->get(route('moderation.show'))->assertOk();
+    $queryCount = count(DB::getQueryLog());
+
+    $pendingCommitOfEveryType();
+    $pendingCommitOfEveryType();
+    $pendingCommitOfEveryType();
+    DB::flushQueryLog();
+
+    $commits = collect($this->get(route('moderation.show'))->assertOk()->inertiaProps('commits.data'));
+
+    expect(count(DB::getQueryLog()))->toBe($queryCount)
+        ->and($commits)->toHaveCount(20)
+        ->and($commits->pluck('type')->unique()->sort()->values()->all())->toBe(['poll', 'question', 'quote', 'release', 'snippet', 'text'])
+        ->and($commits->firstWhere('type', 'release')['release'])->toHaveKeys(['project', 'version'])
+        ->and($commits->firstWhere('type', 'poll')['poll']['closes_at'])->toBeNull()
+        ->and($commits->firstWhere('type', 'snippet')['snippet']['highlighted_html'])->toContain('hl-keyword')
+        ->and($commits->firstWhere('type', 'quote')['quoted_commit']['user'])->toHaveKey('username')
+        ->and($commits->firstWhere('type', 'question')['is_answered'])->toBeFalse();
 });
 
 it('drops deleted pending commits from the queue', function (): void {
