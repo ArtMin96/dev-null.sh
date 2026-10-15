@@ -1,5 +1,13 @@
 import { Head, InfiniteScroll, Link } from '@inertiajs/react';
-import { AtSign, Check, MessageSquareReply, UserPlus, X } from 'lucide-react';
+import {
+    AtSign,
+    BadgeCheck,
+    Check,
+    MessageSquareReply,
+    Quote,
+    UserPlus,
+    X,
+} from 'lucide-react';
 import type { CSSProperties } from 'react';
 import CommitController from '@/actions/App/Http/Controllers/CommitController';
 import { EmptyFeed } from '@/components/commit-feed';
@@ -10,6 +18,17 @@ import AppLayout from '@/layouts/app-layout';
 import { cn, formatRelativeTime, laneColor } from '@/lib/utils';
 import { show } from '@/routes/user';
 import type { CursorPaginated, Notification } from '@/types';
+
+const activities: Record<
+    Exclude<Notification['type'], 'approved' | 'rejected'>,
+    string
+> = {
+    followed: 'followed you',
+    replied: 'replied to your commit',
+    mentioned: 'mentioned you',
+    quoted: 'quoted your commit',
+    answer_accepted: 'accepted your answer',
+};
 
 export default function Index({
     notifications,
@@ -65,6 +84,8 @@ function NotificationItem({ notification }: { notification: Notification }) {
         followed: UserPlus,
         replied: MessageSquareReply,
         mentioned: AtSign,
+        quoted: Quote,
+        answer_accepted: BadgeCheck,
         approved: Check,
         rejected: X,
     }[notification.type];
@@ -114,16 +135,13 @@ function NotificationItem({ notification }: { notification: Notification }) {
                 </div>
 
                 <p className="mt-2 text-[15px]">
-                    {isModeration ? (
+                    {notification.type === 'approved' ||
+                    notification.type === 'rejected' ? (
                         `Your commit was ${notification.type}`
                     ) : (
                         <>
                             <span className="font-medium">{actor.name}</span>{' '}
-                            {notification.type === 'followed'
-                                ? 'followed you'
-                                : notification.type === 'mentioned'
-                                  ? 'mentioned you'
-                                  : 'replied to your commit'}
+                            {activities[notification.type]}
                         </>
                     )}
                     <span className="text-muted-foreground">

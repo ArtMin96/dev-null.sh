@@ -42,6 +42,24 @@ it('lists mentions of the user', function (): void {
             ->where('notifications.data.0.commit.id', $mentioned->commit_id));
 });
 
+it('lists quotes and accepted answers, linking to their commit', function (string $state, string $type): void {
+    $user = User::factory()->create();
+    $notification = Notification::factory()->for($user, 'recipient')->{$state}()->create();
+
+    $response = $this->actingAs($user)->get(route('notification.index'));
+
+    $response->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('notifications.data', 1)
+            ->where('notifications.data.0.type', $type)
+            ->where('notifications.data.0.actor.id', $notification->actor_id)
+            ->where('notifications.data.0.commit.id', $notification->commit_id)
+            ->where('notifications.data.0.commit.user_id', $notification->actor_id));
+})->with([
+    'quoted' => ['quoted', 'quoted'],
+    'answer accepted' => ['answerAccepted', 'answer_accepted'],
+]);
+
 it('hides notifications that no longer hold', function (): void {
     $user = User::factory()->create();
     $notification = Notification::factory()->for($user, 'recipient')->create();

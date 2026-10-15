@@ -19,7 +19,13 @@ export type Notification =
           commit: null;
       })
     | (BaseNotification & {
-          type: 'replied' | 'mentioned' | 'approved' | 'rejected';
+          type:
+              | 'replied'
+              | 'mentioned'
+              | 'quoted'
+              | 'answer_accepted'
+              | 'approved'
+              | 'rejected';
           commit_id: string;
           commit: Omit<Commit, 'user'>;
       });

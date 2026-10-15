@@ -80,6 +80,24 @@ it('deletes mentions along with the commit', function (): void {
     expect(Notification::query()->exists())->toBeFalse();
 });
 
+it('keeps quotes and accepted answers while their commit is approved', function (string $state): void {
+    $notification = Notification::factory()->{$state}()->create();
+
+    expect(Notification::query()->relevant()->sole()->is($notification))->toBeTrue();
+
+    resolve(UpdateCommitStatus::class)->handle($notification->commit, CommitStatus::Rejected);
+
+    expect(Notification::query()->whereKey($notification->id)->relevant()->exists())->toBeFalse();
+})->with(['quoted', 'answerAccepted']);
+
+it('deletes quotes and accepted answers along with their commit', function (string $state): void {
+    $notification = Notification::factory()->{$state}()->create();
+
+    resolve(DeleteCommit::class)->handle($notification->commit);
+
+    expect($notification->fresh())->toBeNull();
+})->with(['quoted', 'answerAccepted']);
+
 it('deletes replies along with the reply', function (): void {
     $notification = Notification::factory()->replied()->create();
 

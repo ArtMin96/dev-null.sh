@@ -72,6 +72,34 @@ final class NotificationFactory extends Factory
         ]);
     }
 
+    /**
+     * An approved commit of the actor quoting one of the recipient's commits.
+     */
+    public function quoted(): self
+    {
+        return $this->state(fn (array $attributes): array => [
+            'type' => NotificationType::Quoted,
+            'commit_id' => fn (array $attributes): string => Commit::factory()
+                ->for(User::query()->whereKey($attributes['actor_id'])->sole())
+                ->create()
+                ->id,
+        ]);
+    }
+
+    /**
+     * An approved question of the actor, who accepted the recipient's answer to it.
+     */
+    public function answerAccepted(): self
+    {
+        return $this->state(fn (array $attributes): array => [
+            'type' => NotificationType::AnswerAccepted,
+            'commit_id' => fn (array $attributes): string => Commit::factory()
+                ->for(User::query()->whereKey($attributes['actor_id'])->sole())
+                ->create()
+                ->id,
+        ]);
+    }
+
     public function read(): self
     {
         return $this->state(fn (array $attributes): array => [
