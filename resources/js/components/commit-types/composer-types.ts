@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
-import { Tag } from 'lucide-react';
+import { ChartBar, Tag } from 'lucide-react';
 import type { ComponentType } from 'react';
+import { PollFields } from '@/components/commit-types/poll-fields';
 import { ReleaseFields } from '@/components/commit-types/release-fields';
 import type { CommitType } from '@/types';
 
@@ -37,5 +38,14 @@ export const composerTypes: ComposerType[] = [
         icon: Tag,
         placeholder: 'What did you release?',
         Fields: ReleaseFields,
+    },
+    {
+        type: 'poll',
+        label: 'Poll',
+        icon: ChartBar,
+        placeholder: 'What should everyone vote on?',
+        Fields: PollFields,
+        allowsImages: false,
+        startsIncomplete: true,
     },
 ];

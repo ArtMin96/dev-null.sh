@@ -7,6 +7,7 @@ namespace Database\Factories;
 use App\Enums\CommitStatus;
 use App\Enums\CommitType;
 use App\Models\Commit;
+use App\Models\Poll;
 use App\Models\Release;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -51,5 +52,16 @@ final class CommitFactory extends Factory
         return $this->state(fn (array $attributes): array => [
             'type' => CommitType::Release,
         ])->has(Release::factory()->state($release), 'release');
+    }
+
+    /**
+     * @param  array<string, mixed>  $poll
+     * @param  list<string>  $options
+     */
+    public function poll(array $poll = [], array $options = ['Yes', 'No']): self
+    {
+        return $this->state(fn (array $attributes): array => [
+            'type' => CommitType::Poll,
+        ])->has(Poll::factory()->state($poll)->withOptions($options), 'poll');
     }
 }

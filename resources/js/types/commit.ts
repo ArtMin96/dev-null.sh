@@ -2,7 +2,7 @@ import type { User } from '@/types/auth';
 
 export type CommitStatus = 'pending' | 'approved' | 'rejected';
 
-export type CommitType = 'text' | 'release';
+export type CommitType = 'text' | 'release' | 'poll';
 
 export type LinkPreview = {
     url: string;
@@ -31,6 +31,23 @@ export type Release = {
     notes: string | null;
 };
 
+/**
+ * An option's votes stay null until the viewer may see the results: once they voted, on their own poll, or once the
+ * poll closed.
+ */
+export type PollOption = {
+    id: string;
+    label: string;
+    votes_count: number | null;
+};
+
+export type Poll = {
+    closes_at: string | null;
+    is_closed: boolean;
+    voted_option_id: string | null;
+    options: PollOption[];
+};
+
 export type Commit = {
     id: string;
     user_id: string;
@@ -51,6 +68,7 @@ export type Commit = {
     link_preview?: LinkPreview | null;
     images?: CommitImage[];
     release?: Release | null;
+    poll?: Poll | null;
 };
 
 export type DeletedCommit = {

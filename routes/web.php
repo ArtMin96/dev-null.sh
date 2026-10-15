@@ -9,6 +9,7 @@ use App\Http\Controllers\CommitController;
 use App\Http\Controllers\CommitImageController;
 use App\Http\Controllers\CommitOpenGraphImageController;
 use App\Http\Controllers\CommitPinController;
+use App\Http\Controllers\CommitPollVoteController;
 use App\Http\Controllers\CommitRejectionController;
 use App\Http\Controllers\CommitReplyController;
 use App\Http\Controllers\CommitStarController;
@@ -89,6 +90,10 @@ Route::middleware('auth')->group(function (): void {
     Route::get('commits/{commit}/replies', [CommitReplyController::class, 'index'])
         ->withTrashed()
         ->name('commit-reply.index');
+
+    // Poll votes...
+    Route::post('commits/{commit}/poll/votes', CommitPollVoteController::class)
+        ->name('commit-poll-vote.store');
 
     // Notifications...
     Route::get('notifications', [NotificationController::class, 'index'])->name('notification.index');

@@ -17,6 +17,7 @@ final readonly class UpdateCommitStatuses
     public function __construct(
         private CreateReplyNotifications $createReplyNotifications,
         private CreateMentionNotifications $createMentionNotifications,
+        private UpdatePollsClosesAt $updatePollsClosesAt,
     ) {
         //
     }
@@ -63,6 +64,7 @@ final readonly class UpdateCommitStatuses
             if ($status === CommitStatus::Approved) {
                 $this->createReplyNotifications->handle(...$commits);
                 $this->createMentionNotifications->handle(...$commits);
+                $this->updatePollsClosesAt->handle(...$commits);
             }
         });
     }

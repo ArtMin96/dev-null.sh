@@ -43,6 +43,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property-read LinkPreview|null $linkPreview
  * @property-read Collection<int, CommitImage> $images
  * @property-read Release|null $release
+ * @property-read Poll|null $poll
  */
 #[UseEloquentBuilder(CommitBuilder::class)]
 final class Commit extends Model
@@ -180,6 +181,14 @@ final class Commit extends Model
     public function release(): HasOne
     {
         return $this->hasOne(Release::class);
+    }
+
+    /**
+     * @return HasOne<Poll, $this>
+     */
+    public function poll(): HasOne
+    {
+        return $this->hasOne(Poll::class);
     }
 
     /**

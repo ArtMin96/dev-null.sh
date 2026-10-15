@@ -8,6 +8,8 @@ use App\Enums\CommitStatus;
 use App\Models\Commit;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * @extends Builder<Commit>
@@ -71,10 +73,19 @@ final class CommitBuilder extends Builder
     /**
      * Eager loads everything a commit card renders: the author, the link preview, the images, and the data of every
      * commit type. Each type with data adds its relation here, scoped to the viewer when what they see depends on who they are.
+     * A poll learns whether the viewer wrote it from its commit, already loaded, so its author follows the counts.
      */
     public function withContentFor(User $viewer): self
     {
-        return $this->with(['user', 'linkPreview', 'images', 'release']);
+        return $this
+            ->with([
+                'user',
+                'linkPreview',
+                'images',
+                'release',
+                'poll' => fn (HasOne $poll): HasOne => $poll->withResultsFor($viewer),
+            ])
+            ->afterQuery(fn (Collection $commits): Collection => $this->markOwnPolls($commits, $viewer));
     }
 
     public function withStarsFor(User $viewer): self
@@ -84,5 +95,20 @@ final class CommitBuilder extends Builder
             ->withExists([
                 'stars as starred' => fn (Builder $query): Builder => $query->whereKey($viewer->id),
             ]);
+    }
+
+    /**
+     * Tells each poll whether the viewer wrote it, from its commit's author: its author follows the counts before anyone votes.
+     *
+     * @param  Collection<int, Commit>  $commits
+     * @return Collection<int, Commit>
+     */
+    private function markOwnPolls(Collection $commits, User $viewer): Collection
+    {
+        foreach ($commits as $commit) {
+            $commit->poll?->setAttribute('is_own', $commit->user_id === $viewer->id);
+        }
+
+        return $commits;
     }
 }
