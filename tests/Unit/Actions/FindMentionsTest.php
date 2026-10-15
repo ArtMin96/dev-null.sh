@@ -45,3 +45,10 @@ it('allows usernames of up to 39 characters', function (): void {
 
     expect($action->handle('@'.str_repeat('a', 39)))->toBe([str_repeat('a', 39)]);
 });
+
+it('skips mentions in code', function (): void {
+    $action = resolve(FindMentions::class);
+
+    expect($action->handle("thanks @taylorotwell for `@Override`\n```java\n@Deprecated\nvoid run() {}\n```"))
+        ->toBe(['taylorotwell']);
+});

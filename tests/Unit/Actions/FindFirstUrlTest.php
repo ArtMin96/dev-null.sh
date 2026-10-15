@@ -182,3 +182,11 @@ it('skips bare domains whose url would be longer than 2048 characters', function
         ->and($action->handle($longest))->toBe('https://'.$longest)
         ->and($action->handle($tooLong.' nativephp.com'))->toBe('https://nativephp.com');
 });
+
+it('skips urls in code', function (): void {
+    $action = resolve(FindFirstUrl::class);
+
+    expect($action->handle("run `curl example.com`\n```\nhttps://example.org\n```\nthen read laravel.com"))
+        ->toBe('https://laravel.com')
+        ->and($action->handle('only `https://example.com` here'))->toBeNull();
+});
