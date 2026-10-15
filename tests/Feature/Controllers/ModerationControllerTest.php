@@ -33,6 +33,21 @@ it('renders pending commits oldest first', function (): void {
             ->has('commits.data.0.user'));
 });
 
+it('renders the release of pending commits', function (): void {
+    $admin = User::factory()->create(['username' => 'admin']);
+
+    Commit::factory()->pending()->release(['project' => 'pestphp/pest', 'version' => 'v5.0.0'])->create();
+
+    $response = $this->actingAs($admin)
+        ->get(route('moderation.show'));
+
+    $response->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('commits.data.0.type', 'release')
+            ->where('commits.data.0.release.project', 'pestphp/pest')
+            ->where('commits.data.0.release.version', 'v5.0.0'));
+});
+
 it('drops deleted pending commits from the queue', function (): void {
     $admin = User::factory()->create(['username' => 'admin']);
 

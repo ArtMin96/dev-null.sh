@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\CommitStatus;
+use App\Enums\CommitType;
 use App\Models\Commit;
 use App\Models\SshKey;
 use App\Models\User;
@@ -44,6 +45,24 @@ it('creates a commit signed with an ssh key', function (): void {
 
     expect($commit->body)->toBe('It was DNS.')
         ->and($commit->status)->toBe(CommitStatus::Pending);
+});
+
+it('only creates text commits', function (): void {
+    $commit = signedCommit($this->keyPair, 'It was DNS.');
+
+    $response = $this->call('POST', route('cli-commit.store', [
+        'type' => 'release',
+        'release' => ['project' => 'devnull', 'version' => 'v1.0.0'],
+    ]), server: [
+        'CONTENT_TYPE' => 'text/plain; charset=utf-8',
+        'HTTP_X_SSH_SIGNATURE' => $commit['signature'],
+    ], content: $commit['payload']);
+
+    $response->assertCreated();
+
+    expect($this->user->commits()->sole())
+        ->type->toBe(CommitType::Text)
+        ->release->toBeNull();
 });
 
 it('links to the commit when it is published right away', function (): void {

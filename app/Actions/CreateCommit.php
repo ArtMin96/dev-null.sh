@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Actions;
 
+use App\Contracts\Dto\CommitTypeData;
 use App\Enums\CommitStatus;
+use App\Enums\CommitType;
 use App\Jobs\UnfurlLink;
 use App\Models\Commit;
 use App\Models\LinkPreview;
@@ -29,17 +31,21 @@ final readonly class CreateCommit
     /**
      * @param  list<UploadedFile>  $images
      */
-    public function handle(User $user, string $body, ?Commit $parent = null, array $images = []): Commit
+    public function handle(User $user, string $body, ?Commit $parent = null, array $images = [], ?CommitTypeData $data = null): Commit
     {
-        return DB::transaction(function () use ($user, $body, $parent, $images): Commit {
+        return DB::transaction(function () use ($user, $body, $parent, $images, $data): Commit {
             $linkPreview = $this->linkPreviewFor($body);
 
             $commit = $user->commits()->create([
+                ...($data?->attributes() ?? []),
                 'body' => $this->emojiShortcodes->replace($body),
                 'parent_id' => $parent?->id,
+                'type' => $data?->type() ?? CommitType::Text,
                 'status' => $user->isAdmin() ? CommitStatus::Approved : CommitStatus::Pending,
                 'link_preview_id' => $linkPreview?->id,
             ]);
+
+            $data?->saveFor($commit);
 
             $this->createCommitImages->handle($commit, $images);
 

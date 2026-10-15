@@ -29,7 +29,9 @@ Identity is GitHub. Every account is a real GitHub user, and the profile (avatar
 
 ## Capabilities and Constraints
 
-- Commits (posts): plain text, 3–280 characters; create and delete only (no editing). Rate limited to 10 commits per minute per user.
+- Commits (posts): a body of 3–280 characters, with inline code and highlighted code blocks; create and delete only (no editing). Rate limited to 10 commits per minute per user.
+- Commit types: the web composer can give a commit one type, which adds structured content under its body; the body stays required and serves as its headline, question, or caption. Without a type, a commit is just its body. Replies and commits from the CLI never have a type. Typed commits go through moderation like any other.
+- Releases: a project name, a version, and optionally a link and notes, shown as a tag with the notes folded past four lines.
 - Follow/unfollow, idempotent; self-follow rejected.
 - Replies: any visible commit can be replied to; a reply is itself a commit (same 280 limit, moderation, and rate limit). Threads expand inline under a commit; logs and the profile's Commits tab list top-level commits only, while the profile's Replies tab lists that user's replies. Every commit has its own page with its ancestors above it and its replies expanded; it is behind login like everything else. Deleting a commit removes it from logs, profiles, counts, and its own page, but never takes other people's replies with it: while it still has visible replies it stays in its thread as a `[deleted]` tombstone with no author or body, and it can no longer be replied to. Deleting an account erases that user's commits for good, along with the replies under them.
 - Stars: anyone who can see a commit can star and unstar it. Starring is idempotent. The count sits on the commit. A star is the engagement action, named the way GitHub names it, and it is not a git ref.

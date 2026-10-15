@@ -318,6 +318,10 @@ Under a commit's body, a quiet action row: "Reply" (muted, opens an inline borde
 ### Tombstones
 A deleted commit that still has visible replies keeps its place so the conversation under it stays intact; one with no visible replies is simply gone. It prints no author, time, or body: a dashed Rail Gray circle where the avatar would be, then a muted line with a mono `[deleted]` token and the sentence "This commit was deleted." In a thread it keeps the "N replies" toggle but has no Reply action; as an ancestor on a commit page it sits on the rail as a hollow Rail Gray node, and the segment below it is Rail Gray too. Labels that point at it read "↳ replying to [deleted]" and are not links.
 
+### Commit Types
+The composer offers one ghost icon toggle per type beside the image picker (a group labelled "Commit type", `aria-pressed`, the active one in Blue Wash with a Commit Blue icon). Pressing one swaps the placeholder and opens that type's fields right under the textarea; pressing it again goes back to a plain commit. A typed commit shows its content right under the body as a hairline-bordered, 8px-rounded block with no lane color.
+- **Release:** a mono `project version` tag, the notes clamped to four lines with a "Show more" toggle, and a "View release" link when there is one.
+
 ### Commit Page
 Every commit has a page at `/@username/commits/{id}`, reached from its relative time or short hash (both links), the "↳ replying to @handle" label, or Enter on a focused commit. A sticky header reads "Commit" with the mono short hash and a copy-link icon on the right. Visible ancestors (up to 20) stack above as regular commit rows on one continuous rail, without delete, with deleted ones as tombstones; the focused commit sits last with a 17px body, a mono "time · date · commit hash" line, and its replies already expanded. A deleted commit's own page is a 404.
 

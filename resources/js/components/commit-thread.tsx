@@ -17,6 +17,7 @@ import {
     imageErrorFrom,
 } from '@/components/commit-image-picker';
 import { CommitImages } from '@/components/commit-images';
+import { CommitTypeContent } from '@/components/commit-types/commit-type-content';
 import { CopyLinkButton } from '@/components/copy-link-button';
 import InputError from '@/components/input-error';
 import { LinkPreview } from '@/components/link-preview';
@@ -548,6 +549,7 @@ function CommitReply({
                         segments={reply.body_segments}
                         className="text-[15px]"
                     />
+                    <CommitTypeContent commit={reply} />
                     {reply.images && <CommitImages images={reply.images} />}
                     {reply.link_preview?.title && (
                         <LinkPreview preview={reply.link_preview} />

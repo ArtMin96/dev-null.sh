@@ -1,11 +1,13 @@
 import { Form, usePage } from '@inertiajs/react';
 import type { KeyboardEvent } from 'react';
+import { useState } from 'react';
 import CommitController from '@/actions/App/Http/Controllers/CommitController';
 import {
     ImagePickerButton,
     ImagePickerPreviews,
     imageErrorFrom,
 } from '@/components/commit-image-picker';
+import { composerTypes } from '@/components/commit-types/composer-types';
 import { GraphRail } from '@/components/graph-rail';
 import InputError from '@/components/input-error';
 import { MentionTextarea } from '@/components/mention-textarea';
@@ -15,6 +17,7 @@ import { UserAvatar } from '@/components/user-avatar';
 import { useImageAttachments } from '@/hooks/use-image-attachments';
 import { moveCaretToEnd, useStash } from '@/hooks/use-stash';
 import { cn, laneColor } from '@/lib/utils';
+import type { CommitType } from '@/types';
 
 const minBodyLength = 3;
 const maxBodyLength = 280;
@@ -26,9 +29,22 @@ export function CommitComposer() {
         'commit',
     );
     const attachments = useImageAttachments();
+    const [type, setType] = useState<CommitType>('text');
+    const [isTypeComplete, setIsTypeComplete] = useState(true);
+
+    const activeType = composerTypes.find((entry) => entry.type === type);
+    const allowsImages = activeType?.allowsImages ?? true;
 
     const remaining = maxBodyLength - body.length;
-    const isCommittable = body.trim().length >= minBodyLength;
+    const isCommittable = body.trim().length >= minBodyLength && isTypeComplete;
+
+    const changeType = (next: CommitType) => {
+        setType(next);
+        setIsTypeComplete(
+            !composerTypes.find((entry) => entry.type === next)
+                ?.startsIncomplete,
+        );
+    };
 
     const submitOnModEnter = (event: KeyboardEvent<HTMLTextAreaElement>) => {
         if (
@@ -57,6 +73,7 @@ export function CommitComposer() {
 
                 drop();
                 attachments.clear();
+                changeType('text');
                 requestAnimationFrame(() =>
                     document.getElementById('body')?.focus(),
                 );
@@ -78,6 +95,7 @@ export function CommitComposer() {
                         />
 
                         <div className="min-w-0 flex-1">
+                            <input type="hidden" name="type" value={type} />
                             <label htmlFor="body" className="sr-only">
                                 Body
                             </label>
@@ -88,14 +106,29 @@ export function CommitComposer() {
                                 value={body}
                                 onValueChange={updateBody}
                                 onKeyDown={submitOnModEnter}
-                                onPaste={attachments.onPaste}
-                                onDragOver={attachments.onDragOver}
-                                onDrop={attachments.onDrop}
+                                onPaste={
+                                    allowsImages
+                                        ? attachments.onPaste
+                                        : undefined
+                                }
+                                onDragOver={
+                                    allowsImages
+                                        ? attachments.onDragOver
+                                        : undefined
+                                }
+                                onDrop={
+                                    allowsImages
+                                        ? attachments.onDrop
+                                        : undefined
+                                }
                                 onFocus={
                                     isRestored ? moveCaretToEnd : undefined
                                 }
                                 maxLength={maxBodyLength}
-                                placeholder="What did you ship?"
+                                placeholder={
+                                    activeType?.placeholder ??
+                                    'What did you ship?'
+                                }
                                 autoComplete="off"
                                 aria-invalid={errors.body ? true : undefined}
                                 aria-describedby="body-count"
@@ -103,6 +136,13 @@ export function CommitComposer() {
                             />
 
                             <InputError message={errors.body} />
+
+                            {activeType && (
+                                <activeType.Fields
+                                    onCompletenessChange={setIsTypeComplete}
+                                />
+                            )}
+                            <InputError message={errors.type} />
 
                             <ImagePickerPreviews
                                 images={attachments.images}
@@ -117,12 +157,25 @@ export function CommitComposer() {
 
                             <div className="mt-2 flex items-center justify-end gap-4">
                                 <div className="mr-auto flex items-center gap-4">
-                                    <ImagePickerButton
-                                        count={attachments.images.length}
-                                        disabled={processing}
-                                        onPick={attachments.attach}
-                                        className="-ml-2"
-                                    />
+                                    <div className="-ml-2 flex items-center">
+                                        {allowsImages && (
+                                            <ImagePickerButton
+                                                count={
+                                                    attachments.images.length
+                                                }
+                                                disabled={processing}
+                                                onPick={attachments.attach}
+                                            />
+                                        )}
+                                        <CommitTypePicker
+                                            type={type}
+                                            hasImages={
+                                                attachments.images.length > 0
+                                            }
+                                            disabled={processing}
+                                            onChange={changeType}
+                                        />
+                                    </div>
                                     {isRestored && (
                                         <StashLabel
                                             onDrop={() => {
@@ -163,5 +216,60 @@ export function CommitComposer() {
                 </>
             )}
         </Form>
+    );
+}
+
+/**
+ * A type that takes no images can't be picked while images are attached: they would be refused.
+ */
+function CommitTypePicker({
+    type,
+    hasImages,
+    disabled,
+    onChange,
+}: {
+    type: CommitType;
+    hasImages: boolean;
+    disabled?: boolean;
+    onChange: (type: CommitType) => void;
+}) {
+    return (
+        <div
+            role="group"
+            aria-label="Commit type"
+            className="flex items-center"
+        >
+            {composerTypes.map((entry) => {
+                const isActive = entry.type === type;
+                const isBlocked = hasImages && entry.allowsImages === false;
+
+                return (
+                    <Button
+                        key={entry.type}
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        disabled={disabled}
+                        onClick={() => {
+                            if (!isBlocked) {
+                                onChange(isActive ? 'text' : entry.type);
+                            }
+                        }}
+                        aria-label={entry.label}
+                        aria-pressed={isActive}
+                        aria-disabled={isBlocked || undefined}
+                        title={
+                            isBlocked
+                                ? `Remove the images to make a ${entry.label.toLowerCase()}`
+                                : entry.label
+                        }
+                        className="text-muted-foreground aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-pressed:bg-primary-soft aria-pressed:text-primary"
+                        data-test={`composer-type-${entry.type}`}
+                    >
+                        <entry.icon className="size-5" />
+                    </Button>
+                );
+            })}
+        </div>
     );
 }

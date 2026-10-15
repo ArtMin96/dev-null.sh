@@ -3,11 +3,13 @@
 declare(strict_types=1);
 
 use App\Enums\CommitStatus;
+use App\Enums\CommitType;
 use App\Enums\Log;
 use App\Jobs\UnfurlLink;
 use App\Models\Commit;
 use App\Models\CommitImage;
 use App\Models\LinkPreview;
+use App\Models\Release;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Sequence;
 use Illuminate\Http\UploadedFile;
@@ -29,6 +31,141 @@ it('may create a commit', function (): void {
 
     expect($user->commits()->sole()->body)->toBe('Hello, devnull!');
 });
+
+it('may create a release', function (): void {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)
+        ->fromRoute('log.show', Log::Following)
+        ->post(route('commit.store'), [
+            'body' => 'Pest 5 is out!',
+            'type' => 'release',
+            'release' => [
+                'project' => 'pestphp/pest',
+                'version' => 'v5.0.0',
+                'url' => 'https://github.com/pestphp/pest/releases/tag/v5.0.0',
+                'notes' => "Faster than ever.\nAnd prettier.",
+            ],
+        ]);
+
+    $response->assertRedirectToRoute('log.show', Log::Following)
+        ->assertSessionHasNoErrors();
+
+    $commit = $user->commits()->sole();
+
+    expect($commit->type)->toBe(CommitType::Release)
+        ->and($commit->release)
+        ->toBeInstanceOf(Release::class)
+        ->project->toBe('pestphp/pest')
+        ->version->toBe('v5.0.0')
+        ->url->toBe('https://github.com/pestphp/pest/releases/tag/v5.0.0')
+        ->notes->toBe("Faster than ever.\nAnd prettier.");
+});
+
+it('may create a release without a link or notes', function (): void {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->fromRoute('log.show', Log::Following)
+        ->post(route('commit.store'), [
+            'body' => 'Tagged a new version.',
+            'type' => 'release',
+            'release' => ['project' => 'devnull', 'version' => '1.0', 'url' => '', 'notes' => ''],
+        ])
+        ->assertSessionHasNoErrors();
+
+    expect($user->commits()->sole()->release)
+        ->toBeInstanceOf(Release::class)
+        ->url->toBeNull()
+        ->notes->toBeNull();
+});
+
+it('validates the release', function (array $release, string $error): void {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)
+        ->fromRoute('log.show', Log::Following)
+        ->post(route('commit.store'), [
+            'body' => 'Pest 5 is out!',
+            'type' => 'release',
+            'release' => [...['project' => 'pestphp/pest', 'version' => 'v5.0.0'], ...$release],
+        ]);
+
+    $response->assertRedirectToRoute('log.show', Log::Following)
+        ->assertSessionHasErrors($error);
+
+    expect(Commit::query()->count())->toBe(0)
+        ->and(Release::query()->count())->toBe(0);
+})->with([
+    'missing project' => [['project' => ''], 'release.project'],
+    'long project' => [['project' => str_repeat('a', 51)], 'release.project'],
+    'missing version' => [['version' => ''], 'release.version'],
+    'long version' => [['version' => str_repeat('1', 31)], 'release.version'],
+    'version with spaces' => [['version' => 'v5 beta'], 'release.version'],
+    'invalid url' => [['url' => 'not a url'], 'release.url'],
+    'non-web url' => [['url' => 'javascript://alert(1)'], 'release.url'],
+    'long url' => [['url' => 'https://example.com/'.str_repeat('a', 236)], 'release.url'],
+    'long notes' => [['notes' => str_repeat('a', 1001)], 'release.notes'],
+    'notes that are not UTF-8' => [['notes' => "Faster \xB1"], 'release.notes'],
+    'unknown field' => [['changelog' => 'Everything'], 'release'],
+]);
+
+it('requires the release of a release commit', function (): void {
+    $response = $this->actingAs(User::factory()->create())
+        ->fromRoute('log.show', Log::Following)
+        ->post(route('commit.store'), ['body' => 'Pest 5 is out!', 'type' => 'release']);
+
+    $response->assertSessionHasErrors(['release', 'release.project', 'release.version']);
+
+    expect(Commit::query()->count())->toBe(0);
+});
+
+it('rejects unknown types', function (mixed $type): void {
+    $response = $this->actingAs(User::factory()->create())
+        ->fromRoute('log.show', Log::Following)
+        ->post(route('commit.store'), ['body' => 'Initial commit', 'type' => $type]);
+
+    $response->assertSessionHasErrors('type');
+
+    expect(Commit::query()->count())->toBe(0);
+})->with([
+    'unknown' => ['unknown'],
+    'array' => [['release']],
+]);
+
+it('only allows text replies', function (): void {
+    $parent = Commit::factory()->create();
+
+    $response = $this->actingAs(User::factory()->create())
+        ->fromRoute('log.show', Log::Everyone)
+        ->post(route('commit.store'), [
+            'body' => 'Shipped a fix for this.',
+            'parent_id' => $parent->id,
+            'type' => 'release',
+            'release' => ['project' => 'pestphp/pest', 'version' => 'v5.0.1'],
+        ]);
+
+    $response->assertSessionHasErrors('type');
+
+    expect($parent->replies()->count())->toBe(0);
+});
+
+it('creates text commits unless told otherwise', function (array $type): void {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->fromRoute('log.show', Log::Following)
+        ->post(route('commit.store'), ['body' => 'Initial commit', ...$type])
+        ->assertSessionHasNoErrors();
+
+    expect($user->commits()->sole())
+        ->type->toBe(CommitType::Text)
+        ->release->toBeNull();
+})->with([
+    'without a type' => [[]],
+    'as text' => [['type' => 'text']],
+    'ignoring release fields' => [['type' => 'text', 'release' => ['project' => 'devnull', 'version' => '1.0']]],
+]);
 
 it('flashes the created commit', function (): void {
     $user = User::factory()->create();
@@ -656,6 +793,28 @@ it('may attach images to a commit', function (): void {
         ->and(Storage::disk()->allFiles('commit-images'))->toHaveCount(3);
 });
 
+it('may attach images to a release', function (): void {
+    Storage::fake();
+
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->fromRoute('log.show', Log::Following)
+        ->post(route('commit.store'), [
+            'body' => 'Pest 5 is out!',
+            'type' => 'release',
+            'release' => ['project' => 'pestphp/pest', 'version' => 'v5.0.0'],
+            'images' => [UploadedFile::fake()->image('screenshot.png', 40, 30)],
+        ])
+        ->assertSessionHasNoErrors();
+
+    $commit = $user->commits()->sole();
+
+    expect($commit->type)->toBe(CommitType::Release)
+        ->and($commit->release?->version)->toBe('v5.0.0')
+        ->and($commit->images)->toHaveCount(1);
+});
+
 it('may not attach more than three images to a commit', function (): void {
     Storage::fake();
 
@@ -730,4 +889,63 @@ it('includes the images of a commit, its ancestors and its replies', function ()
             ->has('ancestors.0.images', 1)
             ->has('replies.data.0.images', 1)
             ->missing('commit.images.0.path'));
+});
+
+it('shows a release with its replies, and as the ancestor of its replies', function (): void {
+    $release = Commit::factory()->release([
+        'project' => 'pestphp/pest',
+        'version' => 'v5.0.0',
+        'url' => 'https://github.com/pestphp/pest/releases/tag/v5.0.0',
+        'notes' => 'Faster than ever.',
+    ])->create();
+    $reply = Commit::factory()->for($release, 'parent')->create();
+
+    $this->actingAs(User::factory()->create());
+
+    $this->get(route('commit.show', [$release->user, $release]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('commit.type', 'release')
+            ->where('commit.release', [
+                'project' => 'pestphp/pest',
+                'version' => 'v5.0.0',
+                'url' => 'https://github.com/pestphp/pest/releases/tag/v5.0.0',
+                'notes' => 'Faster than ever.',
+            ])
+            ->where('replies.data.0.type', 'text')
+            ->where('replies.data.0.release', null));
+
+    $this->get(route('commit.show', [$reply->user, $reply]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('commit.type', 'text')
+            ->where('commit.release', null)
+            ->where('ancestors.0.type', 'release')
+            ->where('ancestors.0.release.project', 'pestphp/pest'));
+});
+
+it('creates a release that shows on the commit page', function (): void {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->fromRoute('log.show', Log::Following)
+        ->post(route('commit.store'), [
+            'body' => 'Pest 5 is out!',
+            'type' => 'release',
+            'release' => ['project' => 'pestphp/pest', 'version' => 'v5.0.0'],
+        ]);
+
+    $commit = $user->commits()->sole();
+
+    $this->get(route('commit.show', [$user, $commit]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('commit.body', 'Pest 5 is out!')
+            ->where('commit.type', 'release')
+            ->where('commit.release', [
+                'project' => 'pestphp/pest',
+                'version' => 'v5.0.0',
+                'url' => null,
+                'notes' => null,
+            ]));
 });

@@ -3,11 +3,14 @@
 declare(strict_types=1);
 
 use App\Actions\CreateCommit;
+use App\Dto\CommitTypes\ReleaseData;
 use App\Enums\CommitStatus;
+use App\Enums\CommitType;
 use App\Jobs\UnfurlLink;
 use App\Models\Commit;
 use App\Models\LinkPreview;
 use App\Models\Notification;
+use App\Models\Release;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
@@ -23,6 +26,37 @@ it('may create a commit', function (): void {
     expect($commit->exists)->toBeTrue()
         ->and($commit->body)->toBe('Hello, devnull!')
         ->and($commit->user->is($user))->toBeTrue();
+});
+
+it('creates text commits by default', function (): void {
+    $action = resolve(CreateCommit::class);
+
+    $commit = $action->handle(User::factory()->create(), 'Just text');
+
+    expect($commit->refresh())
+        ->type->toBe(CommitType::Text)
+        ->release->toBeNull();
+});
+
+it('creates a release along with its commit', function (): void {
+    $action = resolve(CreateCommit::class);
+
+    $commit = $action->handle(User::factory()->create(), 'Pest 5 is out!', data: new ReleaseData(
+        project: 'pestphp/pest',
+        version: 'v5.0.0',
+        url: 'https://github.com/pestphp/pest/releases/tag/v5.0.0',
+        notes: 'Faster than ever.',
+    ));
+
+    expect($commit->refresh())
+        ->type->toBe(CommitType::Release)
+        ->body->toBe('Pest 5 is out!')
+        ->and($commit->release)
+        ->toBeInstanceOf(Release::class)
+        ->project->toBe('pestphp/pest')
+        ->version->toBe('v5.0.0')
+        ->url->toBe('https://github.com/pestphp/pest/releases/tag/v5.0.0')
+        ->notes->toBe('Faster than ever.');
 });
 
 it('creates commits pending review', function (): void {

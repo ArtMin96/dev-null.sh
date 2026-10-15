@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\CommitStatus;
+use App\Enums\CommitType;
 use App\Queries\CommitBuilder;
 use App\Services\CodeSpans;
 use Carbon\CarbonInterface;
@@ -17,6 +18,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -25,6 +27,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property-read string|null $parent_id
  * @property-read string $body
  * @property-read CommitStatus $status
+ * @property-read CommitType $type
  * @property-read string|null $link_preview_id
  * @property-read CarbonInterface $created_at
  * @property-read CarbonInterface $updated_at
@@ -39,6 +42,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property-read bool $is_saved
  * @property-read LinkPreview|null $linkPreview
  * @property-read Collection<int, CommitImage> $images
+ * @property-read Release|null $release
  */
 #[UseEloquentBuilder(CommitBuilder::class)]
 final class Commit extends Model
@@ -48,6 +52,13 @@ final class Commit extends Model
 
     use HasUuids;
     use SoftDeletes;
+
+    /**
+     * @var array<string, string>
+     */
+    protected $attributes = [
+        'type' => CommitType::Text->value,
+    ];
 
     /**
      * @return array<string, string>
@@ -60,6 +71,7 @@ final class Commit extends Model
             'parent_id' => 'string',
             'body' => 'string',
             'status' => CommitStatus::class,
+            'type' => CommitType::class,
             'link_preview_id' => 'string',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
@@ -160,6 +172,14 @@ final class Commit extends Model
         }
 
         return $user instanceof User && ($this->user_id === $user->id || $user->isAdmin());
+    }
+
+    /**
+     * @return HasOne<Release, $this>
+     */
+    public function release(): HasOne
+    {
+        return $this->hasOne(Release::class);
     }
 
     /**

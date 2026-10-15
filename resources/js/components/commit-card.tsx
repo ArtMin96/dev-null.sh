@@ -8,6 +8,7 @@ import { CommitBody } from '@/components/commit-body';
 import { CommitImages } from '@/components/commit-images';
 import { CommitStarButton } from '@/components/commit-star-button';
 import { CommitThread } from '@/components/commit-thread';
+import { CommitTypeContent } from '@/components/commit-types/commit-type-content';
 import { GraphRail } from '@/components/graph-rail';
 import { LinkPreview } from '@/components/link-preview';
 import { Button } from '@/components/ui/button';
@@ -249,6 +250,7 @@ export function CommitCard({
                                             : 'text-[15px]',
                                     )}
                                 />
+                                <CommitTypeContent commit={commit} />
                                 {commit.images && (
                                     <CommitImages images={commit.images} />
                                 )}

@@ -2,6 +2,8 @@ import type { User } from '@/types/auth';
 
 export type CommitStatus = 'pending' | 'approved' | 'rejected';
 
+export type CommitType = 'text' | 'release';
+
 export type LinkPreview = {
     url: string;
     title: string | null;
@@ -22,6 +24,13 @@ export type BodySegment =
     | { type: 'code'; code: string }
     | { type: 'block'; language: string | null; html: string };
 
+export type Release = {
+    project: string;
+    version: string;
+    url: string | null;
+    notes: string | null;
+};
+
 export type Commit = {
     id: string;
     user_id: string;
@@ -29,6 +38,7 @@ export type Commit = {
     body: string;
     body_segments: BodySegment[];
     status: CommitStatus;
+    type: CommitType;
     created_at: string;
     updated_at: string;
     deleted_at?: null;
@@ -40,6 +50,7 @@ export type Commit = {
     parent?: (Omit<Commit, 'parent'> & { user: User }) | DeletedCommit | null;
     link_preview?: LinkPreview | null;
     images?: CommitImage[];
+    release?: Release | null;
 };
 
 export type DeletedCommit = {

@@ -302,6 +302,28 @@ it('includes the link previews of commits', function (Log $log): void {
             ]));
 })->with(Log::cases());
 
+it('includes the releases of commits', function (Log $log): void {
+    $user = User::factory()->create();
+
+    Commit::factory()->for($user)->release(['project' => 'pestphp/pest', 'version' => 'v5.0.0'])->create(['created_at' => now()->subMinute()]);
+    Commit::factory()->for($user)->create();
+
+    $response = $this->actingAs($user)
+        ->get(route('log.show', $log));
+
+    $response->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('commits.data.0.type', 'text')
+            ->where('commits.data.0.release', null)
+            ->where('commits.data.1.type', 'release')
+            ->where('commits.data.1.release', [
+                'project' => 'pestphp/pest',
+                'version' => 'v5.0.0',
+                'url' => null,
+                'notes' => null,
+            ]));
+})->with(Log::cases());
+
 it('defers suggested users to follow', function (): void {
     $user = User::factory()->create();
     $suggested = User::factory()->has(Commit::factory())->create();

@@ -31,7 +31,7 @@ final readonly class CommitController
         $commit = Commit::query()
             ->withVisibleReplyCount($currentUser)
             ->withSavedState($currentUser)
-            ->with(['user', 'linkPreview', 'images'])
+            ->withContentFor($currentUser)
             ->withStarsFor($currentUser)
             ->findOrFail($commit->id);
 
@@ -44,7 +44,7 @@ final readonly class CommitController
 
     public function store(CreateCommitRequest $request, #[CurrentUser] User $user, CreateCommit $action): RedirectResponse
     {
-        $commit = $action->handle($user, $request->string('body')->value(), $request->parent(), $request->images());
+        $commit = $action->handle($user, $request->string('body')->value(), $request->parent(), $request->images(), $request->typeData());
 
         Inertia::flash('committed', [
             'id' => $commit->id,

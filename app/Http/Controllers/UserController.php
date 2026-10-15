@@ -38,7 +38,7 @@ final readonly class UserController
                 ->topLevel()
                 ->withVisibleReplyCount($currentUser)
                 ->withSavedState($currentUser)
-                ->with(['user', 'linkPreview'])
+                ->withContentFor($currentUser)
                 ->withStarsFor($currentUser)
                 ->find($user->pinned_commit_id),
             'commits' => Inertia::scroll(fn () => $user->commits()
@@ -55,7 +55,7 @@ final readonly class UserController
                 )
                 ->withVisibleReplyCount($currentUser)
                 ->withSavedState($currentUser)
-                ->with(['user', 'linkPreview', 'images'])
+                ->withContentFor($currentUser)
                 ->withStarsFor($currentUser)
                 ->latest()
                 ->latest('id')

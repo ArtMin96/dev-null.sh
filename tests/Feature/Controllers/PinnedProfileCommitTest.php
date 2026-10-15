@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Enums\CommitStatus;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Models\Commit;
+use App\Models\CommitImage;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -79,6 +80,22 @@ it('shows a pinned commit once above the log with visible reply counts and uncha
             ->has('commits.data', 1)
             ->where('commits.data.0.is_saved', false)
             ->where('commits.data.0.id', $normal->id));
+});
+
+it('shows the content of a pinned commit like any other card', function (): void {
+    $user = User::factory()->create();
+    $pinned = Commit::factory()->for($user)->release(['project' => 'pestphp/pest', 'version' => 'v5.0.0'])->create();
+    CommitImage::factory()->for($pinned)->create();
+    $user->update(['pinned_commit_id' => $pinned->id]);
+
+    $this->actingAs(User::factory()->create())
+        ->get(route('user.show', $user))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('pinnedCommit.id', $pinned->id)
+            ->where('pinnedCommit.type', 'release')
+            ->where('pinnedCommit.release.project', 'pestphp/pest')
+            ->has('pinnedCommit.images', 1));
 });
 
 it('keeps cursor ordering and excludes a pin on every page including tied timestamps', function (): void {

@@ -21,9 +21,8 @@ final readonly class SavedCommitsQuery
             ->withVisibleReplyCount($user)
             ->withSavedState($user)
             ->withStarsFor($user)
+            ->withContentFor($user)
             ->with([
-                'user',
-                'linkPreview',
                 'parent' => function (BelongsTo $parent) use ($user): void {
                     $parent->getQuery()->withTrashed()->visibleTo($user)->with('user');
                 },

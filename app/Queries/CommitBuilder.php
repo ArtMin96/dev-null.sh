@@ -68,6 +68,15 @@ final class CommitBuilder extends Builder
         return $this->where('status', CommitStatus::Pending);
     }
 
+    /**
+     * Eager loads everything a commit card renders: the author, the link preview, the images, and the data of every
+     * commit type. Each type with data adds its relation here, scoped to the viewer when what they see depends on who they are.
+     */
+    public function withContentFor(User $viewer): self
+    {
+        return $this->with(['user', 'linkPreview', 'images', 'release']);
+    }
+
     public function withStarsFor(User $viewer): self
     {
         return $this
