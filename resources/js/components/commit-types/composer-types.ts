@@ -1,8 +1,9 @@
 import type { LucideIcon } from 'lucide-react';
-import { ChartBar, Tag } from 'lucide-react';
+import { ChartBar, Code, Tag } from 'lucide-react';
 import type { ComponentType } from 'react';
 import { PollFields } from '@/components/commit-types/poll-fields';
 import { ReleaseFields } from '@/components/commit-types/release-fields';
+import { SnippetFields } from '@/components/commit-types/snippet-fields';
 import type { CommitType } from '@/types';
 
 export type ComposerFieldsProps = {
@@ -47,5 +48,12 @@ export const composerTypes: ComposerType[] = [
         Fields: PollFields,
         allowsImages: false,
         startsIncomplete: true,
+    },
+    {
+        type: 'snippet',
+        label: 'Code',
+        icon: Code,
+        placeholder: 'What does this code do?',
+        Fields: SnippetFields,
     },
 ];

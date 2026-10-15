@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 use App\Actions\CreateCommit;
 use App\Dto\CommitTypes\ReleaseData;
+use App\Dto\CommitTypes\SnippetData;
 use App\Enums\CommitStatus;
 use App\Enums\CommitType;
+use App\Enums\SnippetLanguage;
 use App\Jobs\UnfurlLink;
 use App\Models\Commit;
 use App\Models\LinkPreview;
@@ -57,6 +59,24 @@ it('creates a release along with its commit', function (): void {
         ->version->toBe('v5.0.0')
         ->url->toBe('https://github.com/pestphp/pest/releases/tag/v5.0.0')
         ->notes->toBe('Faster than ever.');
+});
+
+it('creates a snippet along with its commit, keeping its code exactly', function (): void {
+    $action = resolve(CreateCommit::class);
+
+    $commit = $action->handle(User::factory()->create(), 'Arrow functions!', data: new SnippetData(
+        language: SnippetLanguage::Php,
+        code: "\t\$double = fn (int \$x): int => \$x * 2;  \n\n    // :heart",
+        filename: 'double.php',
+    ));
+
+    expect($commit->refresh())
+        ->type->toBe(CommitType::Snippet)
+        ->body->toBe('Arrow functions!')
+        ->and($commit->snippet)
+        ->language->toBe(SnippetLanguage::Php)
+        ->filename->toBe('double.php')
+        ->code->toBe("\t\$double = fn (int \$x): int => \$x * 2;  \n\n    // :heart");
 });
 
 it('creates commits pending review', function (): void {

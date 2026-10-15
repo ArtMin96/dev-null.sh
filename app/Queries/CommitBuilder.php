@@ -7,6 +7,7 @@ namespace App\Queries;
 use App\Enums\CommitStatus;
 use App\Models\Commit;
 use App\Models\User;
+use App\Services\CodeHighlighter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -84,6 +85,7 @@ final class CommitBuilder extends Builder
                 'images',
                 'release',
                 'poll' => fn (HasOne $poll): HasOne => $poll->withResultsFor($viewer),
+                'snippet' => fn (HasOne $snippet): HasOne => $snippet->afterQuery(resolve(CodeHighlighter::class)->prefetch(...)),
             ])
             ->afterQuery(fn (Collection $commits): Collection => $this->markOwnPolls($commits, $viewer));
     }

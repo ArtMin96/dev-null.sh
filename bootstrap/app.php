@@ -32,6 +32,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state', 'who_to_follow']);
 
+        // Indentation is part of the code...
+        $middleware->trimStrings(except: ['snippet.code']);
+
         $middleware->redirectGuestsTo(fn (): string => route('home'));
         $middleware->redirectUsersTo(fn (): string => route('log.show', Log::Following));
 

@@ -25,7 +25,7 @@ A social network for developers. Sign in with GitHub, have a Twitter-style profi
 
 **follows** — (`follower_id`, `followed_id`) primary key, both cascade delete, timestamps; index on `followed_id`
 
-**commit types** — `commits.type` (`CommitType`, default `text`). A type with data owns its tables, keyed by a unique `commit_id` (cascade delete): **releases** (`project`, `version`, `url`, `notes`); **polls** (`closes_at`, set on approval) with **poll_options** (`label`, `position`) and **poll_votes** (one per voter and poll)
+**commit types** — `commits.type` (`CommitType`, default `text`). A type with data owns its tables, keyed by a unique `commit_id` (cascade delete): **releases** (`project`, `version`, `url`, `notes`); **polls** (`closes_at`, set on approval) with **poll_options** (`label`, `position`) and **poll_votes** (one per voter and poll); **snippets** (`language`, `filename`, `code`)
 
 **notifications** — `id` (uuid), `recipient_id` / `actor_id` (users, cascade delete), `type` (`NotificationType`), `commit_id` (nullable, cascade delete), `key` (unique per recipient: `followed:{actor}`, `replied:{commit}`), `read_at` (nullable), timestamps
 

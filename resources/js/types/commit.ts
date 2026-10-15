@@ -2,7 +2,7 @@ import type { User } from '@/types/auth';
 
 export type CommitStatus = 'pending' | 'approved' | 'rejected';
 
-export type CommitType = 'text' | 'release' | 'poll';
+export type CommitType = 'text' | 'release' | 'poll' | 'snippet';
 
 export type LinkPreview = {
     url: string;
@@ -48,6 +48,19 @@ export type Poll = {
     options: PollOption[];
 };
 
+export type Snippet = {
+    language: string;
+    language_label: string;
+    filename: string | null;
+    code: string;
+    highlighted_html: string;
+};
+
+export type SnippetLanguageOption = {
+    value: string;
+    label: string;
+};
+
 export type Commit = {
     id: string;
     user_id: string;
@@ -69,6 +82,7 @@ export type Commit = {
     images?: CommitImage[];
     release?: Release | null;
     poll?: Poll | null;
+    snippet?: Snippet | null;
 };
 
 export type DeletedCommit = {

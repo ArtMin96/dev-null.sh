@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Enums\Log;
+use App\Enums\SnippetLanguage;
 use App\Http\Requests\ShowLogRequest;
 use App\Models\Commit;
 use App\Models\User;
@@ -33,6 +34,7 @@ final readonly class LogController
             'suggestions' => fn (): Collection => $log === Log::Following && ! $user->following()->exists()
                 ? $suggested->get($user)
                 : new Collection(),
+            'snippetLanguages' => Inertia::once(fn (): array => SnippetLanguage::options()),
         ]);
     }
 }

@@ -9,6 +9,7 @@ use App\Enums\CommitType;
 use App\Models\Commit;
 use App\Models\Poll;
 use App\Models\Release;
+use App\Models\Snippet;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -63,5 +64,15 @@ final class CommitFactory extends Factory
         return $this->state(fn (array $attributes): array => [
             'type' => CommitType::Poll,
         ])->has(Poll::factory()->state($poll)->withOptions($options), 'poll');
+    }
+
+    /**
+     * @param  array<string, mixed>  $snippet
+     */
+    public function snippet(array $snippet = []): self
+    {
+        return $this->state(fn (array $attributes): array => [
+            'type' => CommitType::Snippet,
+        ])->has(Snippet::factory()->state($snippet), 'snippet');
     }
 }
