@@ -3,10 +3,12 @@
 declare(strict_types=1);
 
 use App\Actions\CreateCommit;
+use App\Dto\CommitTypes\QuoteData;
 use App\Dto\CommitTypes\ReleaseData;
 use App\Dto\CommitTypes\SnippetData;
 use App\Enums\CommitStatus;
 use App\Enums\CommitType;
+use App\Enums\NotificationType;
 use App\Enums\SnippetLanguage;
 use App\Jobs\UnfurlLink;
 use App\Models\Commit;
@@ -15,6 +17,7 @@ use App\Models\Notification;
 use App\Models\Release;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
@@ -257,4 +260,44 @@ it('stores the images of a commit', function (): void {
 
     expect($commit->images()->count())->toBe(1)
         ->and($commit->status)->toBe(CommitStatus::Pending);
+});
+
+it('creates a quote of another commit, pointing at it from the insert that creates the quote', function (): void {
+    $quoted = Commit::factory()->create();
+
+    $action = resolve(CreateCommit::class);
+
+    DB::enableQueryLog();
+
+    $commit = $action->handle(User::factory()->create(), 'This is how you ship.', data: new QuoteData($quoted->id));
+
+    expect(collect(DB::getQueryLog())->pluck('query')->filter(fn (string $query): bool => str_starts_with($query, 'update "commits"')))->toBeEmpty()
+        ->and($commit->refresh())
+        ->type->toBe(CommitType::Quote)
+        ->body->toBe('This is how you ship.')
+        ->quotedCommit->id->toBe($quoted->id);
+});
+
+it('notifies the quoted author about quotes of admins', function (): void {
+    config(['app.admins' => ['nunomaduro']]);
+
+    $quoted = Commit::factory()->create();
+
+    $action = resolve(CreateCommit::class);
+
+    $quote = $action->handle(User::factory()->create(['username' => 'nunomaduro']), 'This is how you ship.', data: new QuoteData($quoted->id));
+
+    expect($quoted->user->notifications()->sole())
+        ->type->toBe(NotificationType::Quoted)
+        ->commit_id->toBe($quote->id);
+});
+
+it('does not notify about pending quotes', function (): void {
+    $quoted = Commit::factory()->create();
+
+    $action = resolve(CreateCommit::class);
+
+    $action->handle(User::factory()->create(), 'This is how you ship.', data: new QuoteData($quoted->id));
+
+    expect(Notification::query()->count())->toBe(0);
 });

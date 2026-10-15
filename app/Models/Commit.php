@@ -45,6 +45,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property-read Release|null $release
  * @property-read Poll|null $poll
  * @property-read Snippet|null $snippet
+ * @property-read string|null $quoted_commit_id
+ * @property-read Commit|null $quotedCommit
  */
 #[UseEloquentBuilder(CommitBuilder::class)]
 final class Commit extends Model
@@ -78,6 +80,7 @@ final class Commit extends Model
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
             'deleted_at' => 'datetime',
+            'quoted_commit_id' => 'string',
         ];
     }
 
@@ -198,6 +201,22 @@ final class Commit extends Model
     public function snippet(): HasOne
     {
         return $this->hasOne(Snippet::class);
+    }
+
+    /**
+     * @return HasMany<Commit, $this>
+     */
+    public function quotes(): HasMany
+    {
+        return $this->hasMany(self::class, 'quoted_commit_id');
+    }
+
+    /**
+     * @return BelongsTo<Commit, $this>
+     */
+    public function quotedCommit(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'quoted_commit_id');
     }
 
     /**

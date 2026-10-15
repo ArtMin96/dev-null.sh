@@ -24,6 +24,7 @@ final readonly class CreateCommit
         private CreateCommitImages $createCommitImages,
         private EmojiShortcodes $emojiShortcodes,
         private Urls $urls,
+        private CreateQuoteNotifications $createQuoteNotifications,
     ) {
         //
     }
@@ -51,6 +52,7 @@ final readonly class CreateCommit
 
             $this->createReplyNotifications->handle($commit);
             $this->createMentionNotifications->handle($commit);
+            $this->createQuoteNotifications->handle($commit);
 
             if ($linkPreview instanceof LinkPreview && $linkPreview->fetched_at === null) {
                 dispatch(new UnfurlLink($linkPreview));

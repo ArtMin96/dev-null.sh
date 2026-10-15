@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\CodeHighlighter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
@@ -86,6 +87,9 @@ final class CommitBuilder extends Builder
                 'release',
                 'poll' => fn (HasOne $poll): HasOne => $poll->withResultsFor($viewer),
                 'snippet' => fn (HasOne $snippet): HasOne => $snippet->afterQuery(resolve(CodeHighlighter::class)->prefetch(...)),
+                'quotedCommit' => function (BelongsTo $quotedCommit) use ($viewer): void {
+                    $quotedCommit->getQuery()->withTrashed()->visibleTo($viewer)->with('user');
+                },
             ])
             ->afterQuery(fn (Collection $commits): Collection => $this->markOwnPolls($commits, $viewer));
     }

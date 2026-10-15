@@ -6,6 +6,7 @@ namespace App\Enums;
 
 use App\Contracts\Dto\CommitTypeData;
 use App\Dto\CommitTypes\PollData;
+use App\Dto\CommitTypes\QuoteData;
 use App\Dto\CommitTypes\ReleaseData;
 use App\Dto\CommitTypes\SnippetData;
 
@@ -15,6 +16,7 @@ enum CommitType: string
     case Release = 'release';
     case Poll = 'poll';
     case Snippet = 'snippet';
+    case Quote = 'quote';
 
     /**
      * The data a commit of this type carries next to its body: plain text commits carry none.
@@ -28,6 +30,7 @@ enum CommitType: string
             self::Release => ReleaseData::class,
             self::Poll => PollData::class,
             self::Snippet => SnippetData::class,
+            self::Quote => QuoteData::class,
         };
     }
 }

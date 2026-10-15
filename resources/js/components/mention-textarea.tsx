@@ -171,8 +171,17 @@ function Highlighted({ text, query }: { text: string; query: string }) {
 }
 
 /**
+ * Whether mention suggestions are open. A dialog closes on Escape before the textarea in it sees the key, so a dialog
+ * holding a MentionTextarea checks this first and leaves that Escape to the suggestions.
+ */
+export function hasOpenMentionSuggestions(): boolean {
+    return document.querySelector('[data-mention-suggestions]') !== null;
+}
+
+/**
  * A textarea that suggests developers to mention as soon as "@" is typed, right under the "@", and turns emoji
- * shortcodes into emoji as they are typed.
+ * shortcodes into emoji as they are typed. The suggestions are portalled to the body and take pointer events even
+ * while a modal dialog disables them everywhere else.
  */
 export function MentionTextarea({
     ref,
@@ -421,9 +430,10 @@ export function MentionTextarea({
             {isOpen &&
                 createPortal(
                     <div
-                        className="fixed z-50 w-72 overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-[0_12px_32px_-12px_rgb(0_0_0/0.35)] motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95"
+                        className="pointer-events-auto fixed z-50 w-72 overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-[0_12px_32px_-12px_rgb(0_0_0/0.35)] motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95"
                         style={position}
                         onMouseDown={(event) => event.preventDefault()}
+                        data-mention-suggestions
                         data-test="mention-suggestions"
                     >
                         {suggestions.length > 0 ? (

@@ -294,7 +294,7 @@ export function CommitCard({
                                             <CommitStarButton
                                                 key={`${commit.starred}-${commit.stars_count}`}
                                                 commit={commit}
-                                                className="px-2 py-0.5"
+                                                className="px-1.5 py-0.5 sm:px-2"
                                             />
                                             {threadActions}
                                         </>

@@ -81,6 +81,7 @@ final class NotificationFactory extends Factory
             'type' => NotificationType::Quoted,
             'commit_id' => fn (array $attributes): string => Commit::factory()
                 ->for(User::query()->whereKey($attributes['actor_id'])->sole())
+                ->quote(Commit::factory()->for(User::query()->whereKey($attributes['recipient_id'])->sole())->create())
                 ->create()
                 ->id,
         ]);

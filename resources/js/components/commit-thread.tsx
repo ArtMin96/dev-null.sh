@@ -18,6 +18,7 @@ import {
 } from '@/components/commit-image-picker';
 import { CommitImages } from '@/components/commit-images';
 import { CommitTypeContent } from '@/components/commit-types/commit-type-content';
+import { QuoteButton } from '@/components/commit-types/quote-button';
 import { CopyLinkButton } from '@/components/copy-link-button';
 import InputError from '@/components/input-error';
 import { LinkPreview } from '@/components/link-preview';
@@ -218,6 +219,13 @@ function ThreadActions({
                     {actions}
 
                     {!isDeleted(commit) && (
+                        <QuoteButton
+                            commit={commit}
+                            keyShortcut={hasKeyboardShortcuts ? 'q' : undefined}
+                        />
+                    )}
+
+                    {!isDeleted(commit) && (
                         <button
                             type="button"
                             onClick={
@@ -234,11 +242,13 @@ function ThreadActions({
                             title={
                                 hasKeyboardShortcuts ? 'Reply (r)' : undefined
                             }
-                            className="flex items-center gap-1.5 rounded-md px-2 py-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                            className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground sm:gap-1.5 sm:px-2"
                             data-test="reply-button"
                         >
                             <MessageSquareReply className="size-4" />
-                            Reply
+                            <span className="sr-only sm:not-sr-only">
+                                Reply
+                            </span>
                             {hasStash && !thread.isReplying && (
                                 <span
                                     title="You have an unsent reply here"
@@ -264,7 +274,7 @@ function ThreadActions({
                                     ? `${thread.isOpen ? 'Hide' : 'Show'} replies (o)`
                                     : undefined
                             }
-                            className="flex items-center gap-1 rounded-md px-2 py-0.5 font-medium text-primary transition-colors hover:bg-primary-soft"
+                            className="flex items-center gap-1 rounded-md px-1.5 py-0.5 font-medium text-primary transition-colors hover:bg-primary-soft sm:px-2"
                             data-test="toggle-replies-button"
                         >
                             <ChevronDown

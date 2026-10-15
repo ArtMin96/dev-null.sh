@@ -2,7 +2,7 @@ import type { User } from '@/types/auth';
 
 export type CommitStatus = 'pending' | 'approved' | 'rejected';
 
-export type CommitType = 'text' | 'release' | 'poll' | 'snippet';
+export type CommitType = 'text' | 'release' | 'poll' | 'snippet' | 'quote';
 
 export type LinkPreview = {
     url: string;
@@ -61,6 +61,19 @@ export type SnippetLanguageOption = {
     label: string;
 };
 
+/**
+ * What a quote embeds of the commit it quotes: its author, age, status, type and body, never its type's content.
+ */
+export type EmbeddedCommit = Pick<
+    Commit,
+    'id' | 'user_id' | 'body' | 'status' | 'type' | 'created_at' | 'deleted_at'
+> & { user: User };
+
+/**
+ * The commit a quote quotes, as the viewer may see it: embedded, or a tombstone once deleted.
+ */
+export type QuotedCommit = EmbeddedCommit | DeletedCommit;
+
 export type Commit = {
     id: string;
     user_id: string;
@@ -83,6 +96,8 @@ export type Commit = {
     release?: Release | null;
     poll?: Poll | null;
     snippet?: Snippet | null;
+    quoted_commit_id?: string | null;
+    quoted_commit?: QuotedCommit | null;
 };
 
 export type DeletedCommit = {

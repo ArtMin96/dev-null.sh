@@ -23,6 +23,7 @@ test('to array', function (): void {
             'deleted_at',
             'link_preview_id',
             'type',
+            'quoted_commit_id',
             'body_segments',
         ]);
 });

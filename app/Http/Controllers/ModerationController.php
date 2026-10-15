@@ -11,12 +11,16 @@ use App\Http\Requests\UpdateModerationRequest;
 use App\Models\Commit;
 use App\Models\User;
 use Illuminate\Container\Attributes\CurrentUser;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
 final readonly class ModerationController
 {
+    /**
+     * Moderators review a pending quote with the commit it quotes, whatever that commit's status.
+     */
     public function show(ShowModerationRequest $request, #[CurrentUser] User $user): Response
     {
         return Inertia::render('moderation/show', [
@@ -24,7 +28,10 @@ final readonly class ModerationController
                 ->pending()
                 ->withSavedState($user)
                 ->withContentFor($user)
-                ->with('parent.user')
+                ->with([
+                    'parent.user',
+                    'quotedCommit' => fn (BelongsTo $quotedCommit): BelongsTo => $quotedCommit->withTrashed()->with('user'),
+                ])
                 ->withStarsFor($user)
                 ->oldest()
                 ->oldest('id')

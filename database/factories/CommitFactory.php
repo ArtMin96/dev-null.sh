@@ -75,4 +75,15 @@ final class CommitFactory extends Factory
             'type' => CommitType::Snippet,
         ])->has(Snippet::factory()->state($snippet), 'snippet');
     }
+
+    /**
+     * A quote of the given commit, or of a new one.
+     */
+    public function quote(?Commit $quoted = null): self
+    {
+        return $this->state(fn (array $attributes): array => [
+            'type' => CommitType::Quote,
+            'quoted_commit_id' => $quoted ?? Commit::factory(),
+        ]);
+    }
 }
