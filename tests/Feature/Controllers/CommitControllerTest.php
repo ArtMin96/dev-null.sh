@@ -17,6 +17,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Tempest\Highlight\Escape;
+use Tempest\Highlight\Highlighter;
+use Tempest\Highlight\Theme;
+use Tempest\Highlight\Tokens\TokenType;
 
 it('may create a commit', function (): void {
     $user = User::factory()->create();
@@ -472,10 +476,41 @@ it('shows the commit and its replies split into prose and highlighted code', fun
                 ['type' => 'text', 'text' => 'Run '],
                 ['type' => 'code', 'code' => 'make'],
                 ['type' => 'text', 'text' => ' :fire'],
-                ['type' => 'block', 'language' => 'php', 'html' => '<span class="hl-variable">$name</span> = <span class="hl-value">\'&lt;b&gt;\'</span>;'],
+                ['type' => 'block', 'language' => 'php', 'language_label' => 'PHP', 'code' => "\$name = '<b>';", 'html' => '<span class="hl-variable">$name</span> = <span class="hl-value">\'&lt;b&gt;\'</span>;'],
             ])
             ->where('replies.data.0.body_segments.1', ['type' => 'code', 'code' => 'make test'])
             ->missing('replies.data.0.body_segments.2'));
+});
+
+it('falls back to plain code when the highlighter output is not clean', function (): void {
+    $this->app->instance(Highlighter::class, new Highlighter(new class implements Theme
+    {
+        public function before(TokenType $tokenType): string
+        {
+            return '<em>';
+        }
+
+        public function after(TokenType $tokenType): string
+        {
+            return '</em>';
+        }
+
+        public function escape(string $content): string
+        {
+            return Escape::html($content);
+        }
+    }));
+
+    $code = "\$a = '<script>alert(1)</script>' . \"&amp;\";";
+    $commit = Commit::factory()->create(['body' => "```php\n{$code}\n```"]);
+
+    $this->actingAs(User::factory()->create())
+        ->get(route('commit.show', [$commit->user, $commit]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('commit.body_segments', [
+                ['type' => 'block', 'language' => 'php', 'language_label' => 'PHP', 'code' => $code, 'html' => e($code)],
+            ]));
 });
 
 it('shows the star count and whether the viewer starred the commit and its ancestors', function (): void {

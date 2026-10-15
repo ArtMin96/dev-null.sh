@@ -28,7 +28,13 @@ export type CommitImage = {
 export type BodySegment =
     | { type: 'text'; text: string }
     | { type: 'code'; code: string }
-    | { type: 'block'; language: string | null; html: string };
+    | {
+          type: 'block';
+          language: string | null;
+          language_label: string;
+          code: string;
+          html: string;
+      };
 
 export type Release = {
     project: string;

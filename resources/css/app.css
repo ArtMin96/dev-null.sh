@@ -132,6 +132,16 @@
     --lane-4: #c2255c;
     --lane-5: #b7791f;
 
+    /* Code tokens keep the app's hues, darkened where needed to read at 4.5:1 or more on a muted code block. */
+    --code-keyword: #3265d5;
+    --code-type: var(--lane-2);
+    --code-property: #00768a;
+    --code-value: #007d22;
+    --code-number: #c73600;
+    --code-variable: var(--lane-4);
+    --code-comment: var(--muted-foreground);
+    --code-deletion: var(--destructive);
+
     --sidebar: var(--background);
     --sidebar-foreground: var(--foreground);
     --sidebar-primary: var(--primary);
@@ -172,6 +182,11 @@
     --lane-3: #3bc9db;
     --lane-4: #f06595;
     --lane-5: #fcc419;
+
+    --code-keyword: var(--primary);
+    --code-property: var(--lane-3);
+    --code-value: var(--lane-1);
+    --code-number: var(--lane-0);
 }
 
 @layer base {
@@ -232,33 +247,33 @@
 /* Syntax highlighting for the classes tempest/highlight emits, built from the app's own colours. */
 @layer components {
     .hl-keyword {
-        color: var(--primary);
+        color: var(--code-keyword);
     }
 
     .hl-type,
     .hl-generic {
-        color: var(--lane-2);
+        color: var(--code-type);
     }
 
     .hl-property {
-        color: var(--lane-3);
+        color: var(--code-property);
     }
 
     .hl-value {
-        color: var(--lane-1);
+        color: var(--code-value);
     }
 
     .hl-number,
     .hl-literal {
-        color: var(--lane-0);
+        color: var(--code-number);
     }
 
     .hl-variable {
-        color: var(--lane-4);
+        color: var(--code-variable);
     }
 
     .hl-comment {
-        color: var(--muted-foreground);
+        color: var(--code-comment);
         font-style: italic;
     }
 
@@ -267,10 +282,10 @@
     }
 
     .hl-addition {
-        color: var(--lane-1);
+        color: var(--code-value);
     }
 
     .hl-deletion {
-        color: var(--destructive);
+        color: var(--code-deletion);
     }
 }

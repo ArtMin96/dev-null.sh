@@ -31,6 +31,7 @@ enum SnippetLanguage: string
     case Scss = 'scss';
     case Sql = 'sql';
     case Svelte = 'svelte';
+    case Terminal = 'terminal';
     case Terraform = 'terraform';
     case Twig = 'twig';
     case TypeScript = 'typescript';
@@ -50,6 +51,33 @@ enum SnippetLanguage: string
             fn (self $language): array => ['value' => $language->value, 'label' => $language->label()],
             self::cases(),
         );
+    }
+
+    /**
+     * The language a code block's fence names, by its name or one of the aliases tempest/highlight knows it by, in any case.
+     */
+    public static function tryFromName(string $name): ?self
+    {
+        $name = mb_strtolower($name);
+
+        return self::tryFrom($name) ?? match ($name) {
+            'apacheconf', 'htaccess' => self::Apache,
+            'sh', 'shell' => self::Bash,
+            'docker' => self::Dockerfile,
+            'env' => self::DotEnv,
+            'gql' => self::GraphQl,
+            'https' => self::Http,
+            'js', 'node' => self::JavaScript,
+            'md' => self::Markdown,
+            'nginxconf' => self::Nginx,
+            'py' => self::Python,
+            'console', 'term' => self::Terminal,
+            'tf', 'hcl', 'terragrunt' => self::Terraform,
+            'ts' => self::TypeScript,
+            'yml' => self::Yaml,
+            'txt' => self::Text,
+            default => null,
+        };
     }
 
     public function label(): string
@@ -76,6 +104,7 @@ enum SnippetLanguage: string
             self::Scss => 'SCSS',
             self::Sql => 'SQL',
             self::Svelte => 'Svelte',
+            self::Terminal => 'Terminal',
             self::Terraform => 'Terraform',
             self::Twig => 'Twig',
             self::TypeScript => 'TypeScript',

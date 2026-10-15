@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\SnippetLanguage;
 use Illuminate\Container\Attributes\Scoped;
-use Tempest\Highlight\Highlighter;
 
 /**
  * Scoped, so that a page of commits shares one highlighter rather than registering its languages for each commit.
@@ -19,7 +19,7 @@ final readonly class CodeSpans
      */
     private const string PATTERN = '/((?<![^\n])`{3,}[^`\r\n]*\r?\n(?:[\s\S]*?\r?\n)?`{3,}[ \t]*(?![^\r\n])|`[^`\r\n]+`)/';
 
-    public function __construct(private Highlighter $highlighter)
+    public function __construct(private CodeHighlighter $codeHighlighter)
     {
         //
     }
@@ -61,10 +61,12 @@ final readonly class CodeSpans
     }
 
     /**
-     * Splits the text into prose, inline code and highlighted code blocks. The highlighter escapes the code, so a
-     * block's HTML is safe to render as is. The line breaks around a block are dropped, since it is a block already.
+     * Splits the text into prose, inline code and highlighted code blocks. Blocks are highlighted like snippets, so a
+     * block's HTML is only ever the escaped code within styling spans, safe to render as is. A block also carries the
+     * label of the language it is highlighted in (the name its fence gives an unknown one, plain text when it names none),
+     * and its code as written, to be copied. The line breaks around a block are dropped, since it is a block already.
      *
-     * @return list<array{type: 'text', text: string}|array{type: 'code', code: string}|array{type: 'block', language: string|null, html: string}>
+     * @return list<array{type: 'text', text: string}|array{type: 'code', code: string}|array{type: 'block', language: string|null, language_label: string, code: string, html: string}>
      */
     public function highlight(string $text): array
     {
@@ -100,17 +102,21 @@ final readonly class CodeSpans
     }
 
     /**
-     * @return array{type: 'block', language: string|null, html: string}
+     * @return array{type: 'block', language: string|null, language_label: string, code: string, html: string}
      */
     private function block(string $part): array
     {
         $lines = explode("\n", str_replace("\r\n", "\n", $part));
         $language = strtok(mb_ltrim($lines[0], '`'), " \t") ?: null;
+        $snippetLanguage = SnippetLanguage::tryFromName((string) $language);
+        $code = implode("\n", array_slice($lines, 1, -1));
 
         return [
             'type' => 'block',
             'language' => $language,
-            'html' => $this->highlighter->parse(implode("\n", array_slice($lines, 1, -1)), $language === null ? null : mb_strtolower($language)),
+            'language_label' => $snippetLanguage?->label() ?? $language ?? SnippetLanguage::Text->label(),
+            'code' => $code,
+            'html' => $this->codeHighlighter->highlight($snippetLanguage ?? SnippetLanguage::Text, $code),
         ];
     }
 }
