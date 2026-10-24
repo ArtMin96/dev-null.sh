@@ -1,5 +1,109 @@
-import type { ReactNode } from 'react';
+import { Link } from '@inertiajs/react';
+import { ArrowUpRight } from 'lucide-react';
+import type { CSSProperties, ReactNode } from 'react';
+import { useState } from 'react';
+import CommitController from '@/actions/App/Http/Controllers/CommitController';
+import { PlatformGlyph } from '@/components/live/platform-glyph';
+import { StreamPlayer } from '@/components/live/stream-player';
+import { Button } from '@/components/ui/button';
+import { useLiveUntil } from '@/hooks/use-live-until';
+import { useNow } from '@/hooks/use-now';
+import { platformName, watchLabel } from '@/lib/live';
+import { cn, formatRelativeTime, laneColor, shortHash } from '@/lib/utils';
+import { show } from '@/routes/user';
 import type { LiveCommit, LiveStream, User } from '@/types';
+
+/**
+ * "live until 18:00 · ends in 1h 08m" in the reader's timezone. The line keeps its height before the browser knows
+ * the time, so nothing below it moves.
+ */
+export function LiveUntil({
+    endsAt,
+    className,
+}: {
+    endsAt: string;
+    className?: string;
+}) {
+    const live = useLiveUntil(endsAt);
+
+    return (
+        <p
+            className={cn(
+                'font-mono text-[13px] text-muted-foreground tabular-nums',
+                className,
+            )}
+            data-test="live-until"
+        >
+            {live === null ? (
+                ' '
+            ) : live.isOver ? (
+                'stream ended'
+            ) : (
+                <>
+                    live until{' '}
+                    <time dateTime={endsAt} className="text-foreground">
+                        {live.until}
+                    </time>{' '}
+                    · ends in {live.endsIn}
+                </>
+            )}
+        </p>
+    );
+}
+
+/**
+ * Plays one stream at a time: which one is remembered by URL, so showing someone else's stream starts it paused.
+ */
+function usePlayingStream(
+    stream: Pick<LiveStream, 'url'>,
+    onPlayingChange?: (isPlaying: boolean) => void,
+): [boolean, (isPlaying: boolean) => void] {
+    const [playingUrl, setPlayingUrl] = useState<string | null>(null);
+
+    return [
+        playingUrl === stream.url,
+        (isPlaying) => {
+            setPlayingUrl(isPlaying ? stream.url : null);
+            onPlayingChange?.(isPlaying);
+        },
+    ];
+}
+
+function LatestCommit({
+    user,
+    commit,
+}: {
+    user: Pick<User, 'username' | 'lane'>;
+    commit: LiveCommit;
+}) {
+    const now = useNow();
+
+    return (
+        <Link
+            href={CommitController.show({ user, commit })}
+            className="block rounded-lg border px-3 py-2 transition-colors outline-none hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            data-test="live-latest-commit"
+        >
+            <span className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
+                <span
+                    aria-hidden
+                    className="size-2 shrink-0 rounded-full bg-(--lane)"
+                    style={{ '--lane': laneColor(user.lane) } as CSSProperties}
+                />
+                <span className="truncate">
+                    latest commit ·{' '}
+                    <time dateTime={commit.created_at}>
+                        {formatRelativeTime(commit.created_at, now)}
+                    </time>
+                </span>
+                <span className="ml-auto shrink-0">{shortHash(commit.id)}</span>
+            </span>
+            <span className="mt-1 line-clamp-3 text-sm leading-normal wrap-anywhere whitespace-pre-line">
+                {commit.body}
+            </span>
+        </Link>
+    );
+}
 
 /**
  * What someone is streaming: the player, who it is and where, their latest commit, when it ends, the platform's
@@ -19,5 +123,60 @@ export function LivePreviewCard({
     actions?: ReactNode;
     onPlayingChange?: (isPlaying: boolean) => void;
 }) {
-    return null;
+    const [isPlaying, setIsPlaying] = usePlayingStream(stream, onPlayingChange);
+
+    return (
+        <div className="@container" data-test="live-preview-card">
+            <div className="grid gap-3.5 @md:grid-cols-[200px_minmax(0,1fr)]">
+                <StreamPlayer
+                    user={user}
+                    stream={stream}
+                    isPlaying={isPlaying}
+                    onPlayingChange={setIsPlaying}
+                />
+
+                <div className="flex min-w-0 flex-col gap-2.5">
+                    <div className="flex min-w-0 items-center gap-2 leading-snug">
+                        <Link
+                            href={show(user)}
+                            className="truncate font-semibold hover:underline"
+                        >
+                            {user.name}
+                        </Link>
+                        <span className="truncate font-mono text-[13px] text-muted-foreground">
+                            @{user.username}
+                        </span>
+                        <span className="ml-auto flex shrink-0 items-center gap-1.5 text-[13px] text-muted-foreground">
+                            <PlatformGlyph
+                                platform={stream.platform}
+                                className="size-3.5"
+                            />
+                            {platformName(stream.platform)}
+                        </span>
+                    </div>
+
+                    {latestCommit && (
+                        <LatestCommit user={user} commit={latestCommit} />
+                    )}
+
+                    <LiveUntil endsAt={stream.ends_at} />
+
+                    <div className="flex flex-wrap gap-2">
+                        <Button asChild>
+                            <a
+                                href={stream.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                data-test="live-stream-watch"
+                            >
+                                {watchLabel(stream.platform)}
+                                <ArrowUpRight />
+                            </a>
+                        </Button>
+                        {actions}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
 }

@@ -1,4 +1,5 @@
 import type { PointerEvent } from 'react';
+import { useEffect, useRef } from 'react';
 
 /**
  * Hover intent for mouse pointers only, so touch and pen fall through to clicks: `onChange(true)` fires after
@@ -19,9 +20,35 @@ export function useHoverIntent({
     onPointerLeave: (event: PointerEvent) => void;
     cancel: () => void;
 } {
+    const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+    const report = useRef(onChange);
+
+    // The timer outlives the render that set it, so it reports through the latest callback.
+    useEffect(() => {
+        report.current = onChange;
+    });
+
+    useEffect(() => () => clearTimeout(timer.current), []);
+
+    const schedule = (isHovering: boolean) => {
+        clearTimeout(timer.current);
+        timer.current = setTimeout(
+            () => report.current(isHovering),
+            isHovering ? openDelay : closeDelay,
+        );
+    };
+
     return {
-        onPointerEnter: () => {},
-        onPointerLeave: () => {},
-        cancel: () => {},
+        onPointerEnter: (event) => {
+            if (event.pointerType === 'mouse') {
+                schedule(true);
+            }
+        },
+        onPointerLeave: (event) => {
+            if (event.pointerType === 'mouse') {
+                schedule(false);
+            }
+        },
+        cancel: () => clearTimeout(timer.current),
     };
 }
