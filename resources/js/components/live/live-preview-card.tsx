@@ -115,7 +115,8 @@ export function LivePreviewCard({
 
     return (
         <div className="@container" data-test="live-preview-card">
-            <div className="grid gap-3.5 @md:grid-cols-[200px_minmax(0,1fr)]">
+            {/* At 520px the thumbnail leaves the details 296px, room for Watch on YouTube and View profile on one row. */}
+            <div className="grid gap-3.5 @md:grid-cols-[184px_minmax(0,1fr)]">
                 <StreamPlayer
                     user={user}
                     stream={stream}
