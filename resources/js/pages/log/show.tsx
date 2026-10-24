@@ -387,7 +387,7 @@ export default function Show({
     const { stop: stopPolling } = usePoll(
         30_000,
         backgroundPollOptions(() => ({
-            only: ['newCommitsCount', 'removedCommitIds', 'liveFollowing'],
+            only: ['newCommitsCount', 'removedCommitIds'],
             data: {
                 since: newestId,
                 pending: notice?.leaving

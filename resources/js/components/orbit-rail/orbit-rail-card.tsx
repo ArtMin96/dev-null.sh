@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
+import { useMountAnimations } from '@/hooks/use-mount-animations';
 
 const focusable =
     'button:not([disabled]), a[href], input:not([disabled]), select, textarea, iframe, [tabindex]:not([tabindex="-1"])';
@@ -24,46 +25,36 @@ export function OrbitRailCard({
     const stem = useRef<HTMLSpanElement>(null);
     const node = useRef<HTMLSpanElement>(null);
     // The bloom opens from where the ring was when the card appeared; scrolling the rail afterwards only moves the line.
-    const [bloomX] = useState(originX);
-
-    useLayoutEffect(() => {
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-            return;
-        }
-
-        const animations = [
-            card.current?.animate(
-                [
-                    {
-                        clipPath: `circle(0px at ${bloomX}px 0px)`,
-                        opacity: 0.3,
-                        transform: 'translateY(-8px) scale(0.985)',
-                    },
-                    {
-                        clipPath: `circle(160% at ${bloomX}px 0px)`,
-                        opacity: 1,
-                        transform: 'none',
-                    },
-                ],
-                { duration: 620, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' },
-            ),
-            stem.current?.animate(
-                { transform: ['scaleY(0)', 'scaleY(1)'] },
-                { duration: 220, easing: 'ease-out' },
-            ),
-            node.current?.animate(
-                { transform: ['scale(0)', 'scale(1.3)', 'scale(1)'] },
+    useMountAnimations(() => [
+        card.current?.animate(
+            [
                 {
-                    duration: 500,
-                    delay: 120,
-                    easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
-                    fill: 'backwards',
+                    clipPath: `circle(0px at ${originX}px 0px)`,
+                    opacity: 0.3,
+                    transform: 'translateY(-8px) scale(0.985)',
                 },
-            ),
-        ];
-
-        return () => animations.forEach((animation) => animation?.cancel());
-    }, [bloomX]);
+                {
+                    clipPath: `circle(160% at ${originX}px 0px)`,
+                    opacity: 1,
+                    transform: 'none',
+                },
+            ],
+            { duration: 620, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' },
+        ),
+        stem.current?.animate(
+            { transform: ['scaleY(0)', 'scaleY(1)'] },
+            { duration: 220, easing: 'ease-out' },
+        ),
+        node.current?.animate(
+            { transform: ['scale(0)', 'scale(1.3)', 'scale(1)'] },
+            {
+                duration: 500,
+                delay: 120,
+                easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+                fill: 'backwards',
+            },
+        ),
+    ]);
 
     useEffect(() => {
         if (focusRequest === null) {

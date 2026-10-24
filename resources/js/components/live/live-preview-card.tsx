@@ -1,14 +1,15 @@
 import { Link } from '@inertiajs/react';
-import { ArrowUpRight } from 'lucide-react';
 import type { CSSProperties, ReactNode } from 'react';
-import { useState } from 'react';
 import CommitController from '@/actions/App/Http/Controllers/CommitController';
 import { PlatformGlyph } from '@/components/live/platform-glyph';
-import { StreamPlayer } from '@/components/live/stream-player';
-import { Button } from '@/components/ui/button';
+import {
+    StreamPlayer,
+    usePlayingStream,
+    WatchStreamButton,
+} from '@/components/live/stream-player';
 import { useLiveUntil } from '@/hooks/use-live-until';
 import { useNow } from '@/hooks/use-now';
-import { platformName, watchLabel } from '@/lib/live';
+import { platformName } from '@/lib/live';
 import { cn, formatRelativeTime, laneColor, shortHash } from '@/lib/utils';
 import { show } from '@/routes/user';
 import type { LiveCommit, LiveStream, User } from '@/types';
@@ -39,34 +40,21 @@ export function LiveUntil({
             ) : live.isOver ? (
                 'stream ended'
             ) : (
+                // Each half wraps as a whole, so a narrow card never splits "10h 49m" or "8:05 AM".
                 <>
-                    live until{' '}
-                    <time dateTime={endsAt} className="text-foreground">
-                        {live.until}
-                    </time>{' '}
-                    · ends in {live.endsIn}
+                    <span className="whitespace-nowrap">
+                        live until{' '}
+                        <time dateTime={endsAt} className="text-foreground">
+                            {live.until}
+                        </time>
+                    </span>{' '}
+                    <span className="whitespace-nowrap">
+                        · ends in {live.endsIn}
+                    </span>
                 </>
             )}
         </p>
     );
-}
-
-/**
- * Plays one stream at a time: which one is remembered by URL, so showing someone else's stream starts it paused.
- */
-function usePlayingStream(
-    stream: Pick<LiveStream, 'url'>,
-    onPlayingChange?: (isPlaying: boolean) => void,
-): [boolean, (isPlaying: boolean) => void] {
-    const [playingUrl, setPlayingUrl] = useState<string | null>(null);
-
-    return [
-        playingUrl === stream.url,
-        (isPlaying) => {
-            setPlayingUrl(isPlaying ? stream.url : null);
-            onPlayingChange?.(isPlaying);
-        },
-    ];
 }
 
 function LatestCommit({
@@ -137,13 +125,14 @@ export function LivePreviewCard({
 
                 <div className="flex min-w-0 flex-col gap-2.5">
                     <div className="flex min-w-0 items-center gap-2 leading-snug">
+                        {/* The handle gives way first, so the name stays readable next to it. */}
                         <Link
                             href={show(user)}
-                            className="truncate font-semibold hover:underline"
+                            className="max-w-2/3 shrink-0 truncate font-semibold hover:underline"
                         >
                             {user.name}
                         </Link>
-                        <span className="truncate font-mono text-[13px] text-muted-foreground">
+                        <span className="min-w-0 truncate font-mono text-[13px] text-muted-foreground">
                             @{user.username}
                         </span>
                         <span className="ml-auto flex shrink-0 items-center gap-1.5 text-[13px] text-muted-foreground">
@@ -162,17 +151,7 @@ export function LivePreviewCard({
                     <LiveUntil endsAt={stream.ends_at} />
 
                     <div className="flex flex-wrap gap-2">
-                        <Button asChild>
-                            <a
-                                href={stream.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                data-test="live-stream-watch"
-                            >
-                                {watchLabel(stream.platform)}
-                                <ArrowUpRight />
-                            </a>
-                        </Button>
+                        <WatchStreamButton stream={stream} />
                         {actions}
                     </div>
                 </div>

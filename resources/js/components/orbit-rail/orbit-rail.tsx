@@ -1,10 +1,9 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link, usePage, usePoll } from '@inertiajs/react';
 import * as PopoverPrimitive from '@radix-ui/react-popover';
 import { Square } from 'lucide-react';
 import type { KeyboardEvent, PointerEvent } from 'react';
 import {
     useCallback,
-    useEffect,
     useId,
     useLayoutEffect,
     useMemo,
@@ -20,7 +19,9 @@ import { OrbitRailItem } from '@/components/orbit-rail/orbit-rail-item';
 import { OrbitRailYou } from '@/components/orbit-rail/orbit-rail-you';
 import { Button } from '@/components/ui/button';
 import { useHoverIntent } from '@/hooks/use-hover-intent';
+import { useMountAnimations } from '@/hooks/use-mount-animations';
 import { useNow } from '@/hooks/use-now';
+import { backgroundPollOptions } from '@/lib/background-poll';
 import { isStreaming } from '@/lib/live';
 import type { CardPlacement } from '@/lib/orbit-rail';
 import {
@@ -79,6 +80,13 @@ function Rail({
     me: Profile;
     liveFollowing: LiveFollowingUser[];
 }) {
+    // The rail refreshes itself, so ranked logs, whose page poll never starts, still see people go live and stop.
+    usePoll(
+        30_000,
+        backgroundPollOptions({ only: ['liveFollowing'], preserveUrl: true }),
+        { mode: 'rest', background: 'pause' },
+    );
+
     const now = useNow();
     const time = now.getTime();
     const people = useMemo(
@@ -163,6 +171,13 @@ function Rail({
         setCard(null);
     }, []);
 
+    // Every way a card opens or moves to another ring measures where it goes against that ring.
+    const openCard = useCallback(
+        (id: string, card: Omit<OpenCard, 'id' | 'placement'>) =>
+            setCard({ ...card, id, placement: place(id) }),
+        [place],
+    );
+
     // One hover intent for every slot and the card, so moving between them shares the open delay and the close grace.
     const onHoverChange = useCallback(
         (isHovering: boolean) => {
@@ -177,15 +192,10 @@ function Rail({
             const id = hovered.current;
 
             if (latest.current.card === null && id && canPreview(id)) {
-                setCard({
-                    id,
-                    pinned: false,
-                    focusRequest: null,
-                    placement: place(id),
-                });
+                openCard(id, { pinned: false, focusRequest: null });
             }
         },
-        [canPreview, place],
+        [canPreview, openCard],
     );
     const hover = useHoverIntent({ onChange: onHoverChange });
     const hoverRef = useRef(hover);
@@ -226,11 +236,9 @@ function Rail({
                                 open.id !== id &&
                                 !isPlaying.current
                             ) {
-                                setCard({
-                                    ...open,
-                                    id,
+                                openCard(id, {
+                                    pinned: open.pinned,
                                     focusRequest: null,
-                                    placement: place(id),
                                 });
                             }
 
@@ -276,18 +284,16 @@ function Rail({
                                 isPlaying.current = false;
                             }
 
-                            setCard({
-                                id,
+                            openCard(id, {
                                 pinned: true,
                                 focusRequest: (open?.focusRequest ?? 0) + 1,
-                                placement: place(id),
                             });
                         },
                         onFocus: () => setFocusIndex(index),
                     },
                 ]),
             ),
-        [ids, slots, canPreview, close, place],
+        [ids, slots, canPreview, close, openCard],
     );
 
     const syncScroll = useCallback(() => {
@@ -543,19 +549,13 @@ function Rail({
 function LaneLine({ color }: { color: string }) {
     const traveller = useRef<HTMLSpanElement>(null);
 
-    useEffect(() => {
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-            return;
-        }
-
-        // The traveller spans the whole line with the pulse at its end, so -100% to +pulse crosses any rail length.
-        const animation = traveller.current?.animate(
+    // The traveller spans the whole line with the pulse at its end, so -100% to +pulse crosses any rail length.
+    useMountAnimations(() => [
+        traveller.current?.animate(
             { transform: ['translateX(-100%)', 'translateX(120px)'] },
             { duration: 5500, iterations: Infinity, easing: 'linear' },
-        );
-
-        return () => animation?.cancel();
-    }, []);
+        ),
+    ]);
 
     return (
         <span

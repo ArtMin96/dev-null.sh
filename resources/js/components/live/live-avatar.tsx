@@ -82,8 +82,32 @@ const sizes = {
 } as const;
 
 /**
+ * The LIVE pill on the bottom edge of a round avatar at `size`, cut out of whatever ring it overlaps in the `surface`
+ * it sits on. Place it inside a `relative` box the avatar's size; `LiveAvatar` already carries it.
+ */
+export function LiveAvatarBadge({
+    size,
+    surface = 'card',
+}: {
+    size: keyof typeof sizes;
+    surface?: 'card' | 'popover';
+}) {
+    return (
+        <LiveBadge
+            className={cn(
+                'absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 ring-2',
+                surface === 'card' ? 'ring-card' : 'ring-popover',
+                sizes[size].badge,
+            )}
+            // On a feed node the pill hangs past the ring, so the graph's lines pass behind it too.
+            data-graph-cutout
+        />
+    );
+}
+
+/**
  * A user's avatar inside a `LiveRing` with the LIVE pill on the ring's bottom edge, at the avatar's `size` in px.
- * `active` marks the one whose stream card is open. The pill is cut out of the ring in the `surface` it sits on.
+ * `active` marks the one whose stream card is open.
  */
 export function LiveAvatar({
     user,
@@ -105,13 +129,7 @@ export function LiveAvatar({
                     pixels={size * 2}
                 />
             </LiveRing>
-            <LiveBadge
-                className={cn(
-                    'absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 ring-2',
-                    surface === 'card' ? 'ring-card' : 'ring-popover',
-                    sizes[size].badge,
-                )}
-            />
+            <LiveAvatarBadge size={size} surface={surface} />
         </span>
     );
 }

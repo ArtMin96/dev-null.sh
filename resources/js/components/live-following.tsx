@@ -2,23 +2,29 @@ import { usePage } from '@inertiajs/react';
 import { ArrowUpRight } from 'lucide-react';
 import { LiveAvatar } from '@/components/live/live-avatar';
 import { useLiveUntil } from '@/hooks/use-live-until';
+import { useNow } from '@/hooks/use-now';
+import { visibleLive } from '@/lib/orbit-rail';
 import type { LiveFollowingUser } from '@/types';
 
+/** The side column has room for a handful; the Orbit Rail on the logs shows everyone. */
+const limit = 5;
+
 /**
- * The aside's "Live now" list, soonest-ending first as the server sends it. Log pages leave it out because the
- * Orbit Rail above the feed already shows the same people.
+ * The aside's "Live now" list: the five streams ending soonest, in the order the server sends them. Log pages leave it
+ * out because the Orbit Rail above the feed already shows the same people.
  */
 export function LiveFollowing() {
     const { component, props } = usePage();
-    const users = props.liveFollowing ?? [];
+    const now = useNow();
+    // A stream that ends drops out with the clock, and the next one moves up into its place.
+    const users = visibleLive(props.liveFollowing ?? [], now).slice(0, limit);
 
     if (component === 'log/show' || users.length === 0) return null;
 
-    // Rows drop themselves once their stream ends, and the whole box goes with the last one.
     return (
         <section
             aria-labelledby="aside-live-following"
-            className="-mt-4 rounded-lg border bg-card p-3 not-has-[li]:hidden"
+            className="-mt-4 rounded-lg border bg-card p-3"
             data-test="live-following"
         >
             <h2
@@ -38,8 +44,6 @@ export function LiveFollowing() {
 
 function LiveFollowingItem({ user }: { user: LiveFollowingUser }) {
     const live = useLiveUntil(user.live.ends_at);
-
-    if (live?.isOver) return null;
 
     return (
         <li>

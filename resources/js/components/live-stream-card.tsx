@@ -1,13 +1,15 @@
 import { Link } from '@inertiajs/react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { ArrowUpRight } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
-import { LiveBadge } from '@/components/live-badge';
 import { LiveAvatar } from '@/components/live/live-avatar';
 import { LiveUntil } from '@/components/live/live-preview-card';
 import { PlatformGlyph } from '@/components/live/platform-glyph';
-import { StreamPlayer } from '@/components/live/stream-player';
+import {
+    StreamPlayer,
+    usePlayingStream,
+    WatchStreamButton,
+} from '@/components/live/stream-player';
 import { Button } from '@/components/ui/button';
 import { DialogOverlay, DialogPortal } from '@/components/ui/dialog';
 import {
@@ -16,8 +18,7 @@ import {
     PopoverContent,
 } from '@/components/ui/popover';
 import { useHoverIntent } from '@/hooks/use-hover-intent';
-import { platformName, watchLabel } from '@/lib/live';
-import { cn } from '@/lib/utils';
+import { platformName } from '@/lib/live';
 import { show } from '@/routes/user';
 import type { LiveStream, User } from '@/types';
 
@@ -37,7 +38,7 @@ export function LiveStreamCard({
     canPlay?: boolean;
     onPlayingChange?: (isPlaying: boolean) => void;
 }) {
-    const [isPlaying, setIsPlaying] = useState(false);
+    const [isPlaying, setIsPlaying] = usePlayingStream(stream, onPlayingChange);
 
     return (
         <div data-test="live-stream-card">
@@ -45,10 +46,7 @@ export function LiveStreamCard({
                 user={user}
                 stream={canPlay ? stream : { ...stream, embed: null }}
                 isPlaying={isPlaying}
-                onPlayingChange={(next) => {
-                    setIsPlaying(next);
-                    onPlayingChange?.(next);
-                }}
+                onPlayingChange={setIsPlaying}
             />
             <p className="mt-3 line-clamp-2 font-semibold text-pretty">
                 {user.name} is live
@@ -58,33 +56,8 @@ export function LiveStreamCard({
                 {platformName(stream.platform)}
             </p>
             <LiveUntil endsAt={stream.ends_at} className="mt-1" />
-            <Button asChild className="mt-3 w-full">
-                <a
-                    href={stream.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    data-test="live-stream-watch"
-                >
-                    {watchLabel(stream.platform)}
-                    <ArrowUpRight />
-                </a>
-            </Button>
+            <WatchStreamButton stream={stream} className="mt-3 w-full" />
         </div>
-    );
-}
-
-/**
- * The LIVE label on the bottom edge of an avatar's live ring, for avatars that draw their own ring. `LiveAvatar`
- * already carries it.
- */
-export function LiveAvatarMarker({ className }: { className?: string }) {
-    return (
-        <LiveBadge
-            className={cn(
-                'absolute -bottom-1.5 left-1/2 -translate-x-1/2 ring-2 ring-card',
-                className,
-            )}
-        />
     );
 }
 

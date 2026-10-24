@@ -2,8 +2,9 @@ import { ArrowUpRight, ImageOff, Play } from 'lucide-react';
 import { useState, useSyncExternalStore } from 'react';
 import { EmbedFrame } from '@/components/link-embed';
 import { LiveBadge } from '@/components/live-badge';
+import { Button } from '@/components/ui/button';
 import { useNow } from '@/hooks/use-now';
-import { platformName, thumbnailUrl } from '@/lib/live';
+import { platformName, thumbnailUrl, watchLabel } from '@/lib/live';
 import { cn } from '@/lib/utils';
 import type { LiveStream, User } from '@/types';
 
@@ -28,10 +29,11 @@ function ThumbnailImage({ src }: { src: string }) {
     }
 
     return (
+        // Not lazy: it only mounts once a card or sheet opens, and a bloom that starts clipped to a point would hold
+        // a lazy image back until the entrance is over.
         <img
             src={src}
             alt=""
-            loading="lazy"
             decoding="async"
             referrerPolicy="no-referrer"
             onError={() => setIsBroken(true)}
@@ -44,7 +46,7 @@ function ThumbnailImage({ src }: { src: string }) {
  * The stream's 16:9 thumbnail with the 5-minute cache-bust from `thumbnailUrl`, so it never shifts layout. The
  * bucket depends on the reader's clock, so the image only loads in the browser, never from the server's markup.
  */
-export function StreamThumbnail({
+function StreamThumbnail({
     stream,
     className,
 }: {
@@ -69,6 +71,50 @@ export function StreamThumbnail({
         >
             {isClient && <ThumbnailImage key={src} src={src} />}
         </span>
+    );
+}
+
+/**
+ * The play state for a `StreamPlayer`, one stream at a time: it is remembered by URL, so a card that starts showing
+ * someone else's stream starts it paused. `onPlayingChange` hears every change, so a popover can pin itself open.
+ */
+export function usePlayingStream(
+    stream: Pick<LiveStream, 'url'>,
+    onPlayingChange?: (isPlaying: boolean) => void,
+): [boolean, (isPlaying: boolean) => void] {
+    const [playingUrl, setPlayingUrl] = useState<string | null>(null);
+
+    return [
+        playingUrl === stream.url,
+        (isPlaying) => {
+            setPlayingUrl(isPlaying ? stream.url : null);
+            onPlayingChange?.(isPlaying);
+        },
+    ];
+}
+
+/**
+ * The provider's link-out in its own words, "Watch on YouTube" or "Join on Twitch", opening in a new tab.
+ */
+export function WatchStreamButton({
+    stream,
+    className,
+}: {
+    stream: Pick<LiveStream, 'url' | 'platform'>;
+    className?: string;
+}) {
+    return (
+        <Button asChild className={className}>
+            <a
+                href={stream.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-test="live-stream-watch"
+            >
+                {watchLabel(stream.platform)}
+                <ArrowUpRight />
+            </a>
+        </Button>
     );
 }
 
