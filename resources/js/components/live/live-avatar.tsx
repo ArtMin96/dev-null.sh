@@ -73,6 +73,27 @@ export function LiveRing({
     );
 }
 
+let offscreen: IntersectionObserver | undefined;
+
+/**
+ * Marks a live avatar `data-offscreen` while it is out of view, through one observer for the whole page. Chrome can't
+ * hand an unpainted element's animation to the compositor, so a ring spinning below the fold would otherwise
+ * restyle the page on the main thread every frame.
+ */
+function observeOffscreen(element: HTMLElement): () => void {
+    offscreen ??= new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+            entry.target.toggleAttribute(
+                'data-offscreen',
+                !entry.isIntersecting,
+            );
+        }
+    });
+    offscreen.observe(element);
+
+    return () => offscreen?.unobserve(element);
+}
+
 const sizes = {
     28: { avatar: 'size-7', badge: 'px-1 text-[8px] leading-3' },
     36: { avatar: 'size-9', badge: 'px-1 text-[8px] leading-3' },
@@ -121,7 +142,11 @@ export function LiveAvatar({
     surface?: 'card' | 'popover';
 }) {
     return (
-        <span className="relative flex shrink-0" data-test="live-avatar">
+        <span
+            ref={observeOffscreen}
+            className="relative flex shrink-0 data-offscreen:**:[animation-play-state:paused]"
+            data-test="live-avatar"
+        >
             <LiveRing lane={user.lane} isGlowing={active}>
                 <UserAvatar
                     user={user}
