@@ -97,9 +97,10 @@ export function OrbitRailSlot({
                 >
                     {children}
                 </span>
+                {/* Clear of the LIVE pill hanging off the ring, even while the ring is lifted. */}
                 <span
                     className={cn(
-                        'mt-1.5 block max-w-14 truncate font-mono text-[10px] leading-3.5',
+                        'mt-2.5 block max-w-14 truncate font-mono text-[10px] leading-3.5',
                         isActive
                             ? 'font-semibold text-foreground'
                             : 'text-muted-foreground',
