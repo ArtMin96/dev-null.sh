@@ -210,6 +210,8 @@ A cool, nearly colorless shell with one working blue and six author lanes reserv
 
 **The One Blue Rule.** Blue means "you can act here" or "you are here". It is never decorative and never assigned to an author lane.
 
+**The Live Ring Rule.** Someone who is live wears one look everywhere (feed node, profile header, user preview, aside, the Orbit Rail): the `LiveRing` from `components/live/live-avatar.tsx`, a 2px conic ring that starts in their own lane for the first fifth and runs through the other lanes back into theirs, a 2px see-through gap, then the avatar, with the red mono LIVE pill on the ring's bottom edge. It turns once every 9s, by rotation only, and holds still under reduced motion. No other avatar ring spins, and live is never shown as a red avatar ring.
+
 ## Typography
 
 **Display Font:** Geist (with ui-sans-serif, system-ui)
