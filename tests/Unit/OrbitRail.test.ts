@@ -3,7 +3,6 @@ import { test } from 'node:test';
 import {
     cardPlacement,
     nextIndex,
-    railSummary,
     visibleLive,
 } from '../../resources/js/lib/orbit-rail.ts';
 
@@ -43,12 +42,6 @@ void test('leaves other keys and an empty rail alone', () => {
     assert.equal(nextIndex(0, 'Enter', 3), null);
     assert.equal(nextIndex(0, 'ArrowDown', 3), null);
     assert.equal(nextIndex(0, 'ArrowRight', 0), null);
-});
-
-void test('says how many people you follow are live', () => {
-    assert.equal(railSummary(0), 'Nobody you follow is live');
-    assert.equal(railSummary(1), 'Live now · 1 you follow');
-    assert.equal(railSummary(6), 'Live now · 6 you follow');
 });
 
 void test('opens the card just left of the ring it belongs to', () => {

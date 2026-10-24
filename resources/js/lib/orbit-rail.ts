@@ -43,16 +43,6 @@ export function nextIndex(
     }
 }
 
-/**
- * The rail's right-hand summary for how many people you follow are live, like "Live now · 6 you follow", and
- * "Live now · 1 you follow" for one. With nobody live it reads "Nobody you follow is live".
- */
-export function railSummary(count: number): string {
-    return count === 0
-        ? 'Nobody you follow is live'
-        : `Live now · ${count} you follow`;
-}
-
 export type CardPlacement = {
     /** The card's width: 520px, or the column less its gutters when that is narrower. */
     width: number;

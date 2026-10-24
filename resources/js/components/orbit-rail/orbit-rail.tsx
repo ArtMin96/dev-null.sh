@@ -2,14 +2,7 @@ import { Link, usePage, usePoll } from '@inertiajs/react';
 import * as PopoverPrimitive from '@radix-ui/react-popover';
 import { Square } from 'lucide-react';
 import type { KeyboardEvent, PointerEvent } from 'react';
-import {
-    useCallback,
-    useId,
-    useLayoutEffect,
-    useMemo,
-    useRef,
-    useState,
-} from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { GoLiveDialog, useEndStream } from '@/components/go-live-dialog';
 import { LiveStreamSheet } from '@/components/live-stream-card';
 import { LivePreviewCard } from '@/components/live/live-preview-card';
@@ -24,12 +17,7 @@ import { useNow } from '@/hooks/use-now';
 import { backgroundPollOptions } from '@/lib/background-poll';
 import { isStreaming } from '@/lib/live';
 import type { CardPlacement } from '@/lib/orbit-rail';
-import {
-    cardPlacement,
-    nextIndex,
-    railSummary,
-    visibleLive,
-} from '@/lib/orbit-rail';
+import { cardPlacement, nextIndex, visibleLive } from '@/lib/orbit-rail';
 import { laneColor } from '@/lib/utils';
 import { show } from '@/routes/user';
 import type { LiveFollowingUser, LiveStream, Profile } from '@/types';
@@ -103,7 +91,6 @@ function Rail({
         [peopleKey],
     );
 
-    const titleId = useId();
     const section = useRef<HTMLElement>(null);
     const scroller = useRef<HTMLDivElement>(null);
     const [slots] = useState(() => new Map<string, HTMLButtonElement>());
@@ -372,7 +359,7 @@ function Rail({
     return (
         <section
             ref={section}
-            aria-labelledby={titleId}
+            aria-label="Live now from people you follow"
             className="flex items-center border-b"
             data-test="orbit-rail"
         >
@@ -417,19 +404,6 @@ function Rail({
                     </ul>
                 </div>
             </div>
-
-            <h2
-                id={titleId}
-                className="hidden shrink-0 items-center gap-1.5 pr-4 pl-2 font-mono text-[11px] whitespace-nowrap text-muted-foreground sm:flex"
-            >
-                {people.length > 0 && (
-                    <span aria-hidden className="relative flex size-1.5">
-                        <span className="absolute inset-0 rounded-full bg-red-600 motion-safe:animate-ping" />
-                        <span className="relative size-1.5 rounded-full bg-red-600" />
-                    </span>
-                )}
-                {railSummary(people.length)}
-            </h2>
 
             <PopoverPrimitive.Root
                 open={isOpen}
