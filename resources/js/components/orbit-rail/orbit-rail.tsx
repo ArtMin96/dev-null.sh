@@ -360,17 +360,21 @@ function Rail({
         <section
             ref={section}
             aria-label="Live now from people you follow"
-            className="flex items-center border-b"
+            className="border-b"
             data-test="orbit-rail"
         >
             <div
                 ref={scroller}
                 onScroll={onScroll}
-                className="h-21 min-w-0 flex-1 snap-x snap-mandatory scroll-px-4 scrollbar-none overflow-x-auto overflow-y-hidden"
-                // The edges fade only on a side there is more rail to scroll to.
-                style={{
-                    maskImage: `linear-gradient(to right, ${edges.start ? 'black' : 'transparent'}, black 24px, black calc(100% - 24px), ${edges.end ? 'black' : 'transparent'})`,
-                }}
+                className="h-21 snap-x snap-mandatory scroll-px-4 scrollbar-none overflow-x-auto overflow-y-hidden"
+                // The edges fade only on a side there is more rail to scroll to, so a row that fits has no fade at all.
+                style={
+                    edges.start && edges.end
+                        ? undefined
+                        : {
+                              maskImage: `linear-gradient(to right, ${edges.start ? 'black' : 'transparent'}, black 24px, black calc(100% - 24px), ${edges.end ? 'black' : 'transparent'})`,
+                          }
+                }
             >
                 <div className="relative w-max">
                     {people.length > 0 && (
@@ -518,7 +522,7 @@ function Rail({
 }
 
 /**
- * The rail's lane through the ring centres, with a pulse of the open card's lane travelling along it.
+ * The rail's lane from the first ring's centre to the last, with a pulse of the open card's lane travelling along it.
  */
 function LaneLine({ color }: { color: string }) {
     const traveller = useRef<HTMLSpanElement>(null);
@@ -534,7 +538,7 @@ function LaneLine({ color }: { color: string }) {
     return (
         <span
             aria-hidden
-            className="pointer-events-none absolute inset-x-4 top-[31px] h-0.5 overflow-hidden rounded-[1px] bg-rail"
+            className="pointer-events-none absolute inset-x-11 top-[31px] h-0.5 overflow-hidden rounded-[1px] bg-rail"
         >
             <span
                 ref={traveller}
