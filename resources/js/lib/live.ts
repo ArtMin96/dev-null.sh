@@ -25,16 +25,26 @@ export function isStreaming(
     return new Date(stream.ends_at).getTime() > now.getTime();
 }
 
+// Building a formatter is what costs, about half a millisecond each, so every ring on the rail shares one per timezone.
+const clockFormats = new Map<string | undefined, Intl.DateTimeFormat>();
+
 /**
- * The clock time a stream ends at in a timezone, like "18:00" or "6:00 PM" in the browser's locale, the same format
- * as `formatZonedTime`.
+ * The clock time a stream ends at in a timezone (the browser's own when omitted), like "18:00" or "6:00 PM" in the
+ * browser's locale, the same format as `formatZonedTime`.
  */
-export function formatLiveUntil(endsAt: string, timeZone: string): string {
-    return new Date(endsAt).toLocaleTimeString(undefined, {
-        hour: 'numeric',
-        minute: '2-digit',
-        timeZone,
-    });
+export function formatLiveUntil(endsAt: string, timeZone?: string): string {
+    let format = clockFormats.get(timeZone);
+
+    if (format === undefined) {
+        format = new Intl.DateTimeFormat(undefined, {
+            hour: 'numeric',
+            minute: '2-digit',
+            timeZone,
+        });
+        clockFormats.set(timeZone, format);
+    }
+
+    return format.format(new Date(endsAt));
 }
 
 /**

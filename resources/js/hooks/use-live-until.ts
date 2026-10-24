@@ -1,7 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { useNow } from '@/hooks/use-now';
 import { formatEndsIn, formatLiveUntil, isStreaming } from '@/lib/live';
-import { browserTimeZone } from '@/lib/utils';
 
 const subscribe = () => () => {};
 
@@ -25,7 +24,7 @@ export function useLiveUntil(
     }
 
     return {
-        until: formatLiveUntil(endsAt, browserTimeZone()),
+        until: formatLiveUntil(endsAt),
         endsIn: formatEndsIn(endsAt, now),
         isOver: !isStreaming({ ends_at: endsAt }, now),
     };
