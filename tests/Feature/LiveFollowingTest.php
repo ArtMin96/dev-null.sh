@@ -43,7 +43,7 @@ it('lists the people the user follows who are live, soonest ending first', funct
         ->assertJsonPath('props.liveFollowing.*.id', [$later->id]);
 });
 
-it('sends each live person as a user with their stream and latest commit', function (): void {
+it('sends each live person with only what the rail draws, their stream and latest commit', function (): void {
     $viewer = User::factory()->create();
     $live = User::factory()->live(LivePlatform::Twitch)->create();
     $commit = Commit::factory()->for($live)->create(['body' => str_repeat('a', 400), 'created_at' => now()->subMinute()]);
@@ -73,7 +73,8 @@ it('sends each live person as a user with their stream and latest commit', funct
         ])
         ->assertJsonMissingPath('props.liveFollowing.0.latest_commit_id')
         ->assertJsonMissingPath('props.liveFollowing.0.pivot')
-        ->assertJsonMissingPath('props.liveFollowing.0.live_url');
+        ->assertJsonMissingPath('props.liveFollowing.0.live_url')
+        ->assertJsonMissingPath('props.liveFollowing.0.bio');
 });
 
 it('takes the newest approved top-level commit, skipping replies, pending and deleted commits', function (): void {

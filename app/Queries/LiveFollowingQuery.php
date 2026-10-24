@@ -14,6 +14,7 @@ final readonly class LiveFollowingQuery
     /**
      * The people the user follows who are live, soonest ending first, each with their latest commit to say what they
      * are up to. Two queries however many are live: the people with the id of their latest commit, then those commits.
+     * Each person carries only what the rail and the aside draw, as both reload it every 30 seconds.
      *
      * @return Collection<int, array<mixed>>
      */
@@ -40,8 +41,7 @@ final readonly class LiveFollowingQuery
             ->oldest('users.live_ends_at')
             ->orderBy('users.id')
             ->limit($limit)
-            ->get()
-            ->makeHidden('latest_commit_id');
+            ->get();
 
         $ids = $people->pluck('latest_commit_id')->filter()->values()->all();
 
@@ -56,7 +56,12 @@ final readonly class LiveFollowingQuery
             $commit = is_string($id) ? $commits->get($id) : null;
 
             return [
-                ...$person->toArray(),
+                'id' => $person->id,
+                'username' => $person->username,
+                'name' => $person->name,
+                'avatar_url' => $person->avatar_url,
+                'lane' => $person->lane(),
+                'live' => $person->liveStream()?->toArray(),
                 'latest_commit' => $commit instanceof Commit ? [
                     'id' => $commit->id,
                     'body' => Str::limit($commit->body, Commit::PREVIEW_LENGTH, '…'),

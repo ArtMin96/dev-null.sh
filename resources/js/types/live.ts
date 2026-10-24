@@ -31,10 +31,14 @@ export type LiveCommit = {
 };
 
 /**
- * One entry of the shared `liveFollowing` prop from `LiveFollowingQuery::get()`: the full user array, always with
- * `live` set, plus `latest_commit` (null when they have none). Sorted soonest-ending first, at most 24.
+ * One entry of the shared `liveFollowing` prop from `LiveFollowingQuery::get()`: just what the rail and the aside
+ * draw of the person, with `live` always set and `latest_commit` (null when they have none). Sorted soonest-ending
+ * first, at most 24.
  */
-export type LiveFollowingUser = User & {
+export type LiveFollowingUser = Pick<
+    User,
+    'id' | 'username' | 'name' | 'avatar_url' | 'lane'
+> & {
     live: LiveStream;
     latest_commit: LiveCommit | null;
 };
