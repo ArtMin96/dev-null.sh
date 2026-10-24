@@ -9,6 +9,7 @@ import {
 } from '@/components/graph-canvas';
 import type { GraphNodeSpec } from '@/components/graph-canvas';
 import { LiveAvatarMarker } from '@/components/live-stream-card';
+import { LiveRing } from '@/components/live/live-avatar';
 import { UserAvatar } from '@/components/user-avatar';
 import { bridgeDuration } from '@/lib/graph';
 import { cn, laneStrokeStyle } from '@/lib/utils';
@@ -373,7 +374,7 @@ export function RailAvatar({
     user,
     progress,
 }: {
-    user: Pick<User, 'name' | 'avatar_url' | 'live'>;
+    user: Pick<User, 'name' | 'avatar_url' | 'lane' | 'live'>;
     // Fills the ring clockwise from 0 to 1, as a post grows toward its limit. At 0 the ring stays dashed.
     progress?: number;
 }) {
@@ -381,65 +382,63 @@ export function RailAvatar({
 
     return (
         <span className="relative flex rounded-full bg-card">
-            <span
-                className={cn(
-                    'relative flex rounded-full border-2 border-(--lane) p-0.5 transition-opacity duration-200',
-                    dimmedNode,
-                    {
-                        'border-red-600': isLive,
-                        'border-transparent': progress !== undefined,
-                    },
-                )}
-            >
-                {progress !== undefined && (
-                    <>
-                        <span
-                            className={cn(
-                                'pointer-events-none absolute -inset-0.5 rounded-full border-2 border-dashed transition-opacity duration-150 ease-out motion-reduce:transition-none',
-                                isLive ? 'border-red-600' : 'border-(--lane)',
-                                progress > 0 ? 'opacity-0' : 'opacity-100',
-                            )}
-                        />
-                        <svg
-                            viewBox="0 0 48 48"
-                            className={cn(
-                                'pointer-events-none absolute -inset-0.5 size-12 -rotate-90 transition-opacity duration-150 ease-out motion-reduce:transition-none',
-                                progress > 0 ? 'opacity-100' : 'opacity-0',
-                            )}
-                            fill="none"
-                            strokeWidth={2}
-                        >
-                            <circle
-                                cx="24"
-                                cy="24"
-                                r="23"
+            {isLive && progress === undefined ? (
+                <LiveRing
+                    lane={user.lane}
+                    className={cn(
+                        'transition-opacity duration-200',
+                        dimmedNode,
+                    )}
+                >
+                    <UserAvatar user={user} className="size-10" />
+                </LiveRing>
+            ) : (
+                <span
+                    className={cn(
+                        'relative flex rounded-full border-2 border-(--lane) p-0.5 transition-opacity duration-200',
+                        dimmedNode,
+                        { 'border-transparent': progress !== undefined },
+                    )}
+                >
+                    {progress !== undefined && (
+                        <>
+                            <span
                                 className={cn(
-                                    isLive
-                                        ? 'stroke-red-600'
-                                        : 'stroke-(--lane)',
-                                    'opacity-25',
+                                    'pointer-events-none absolute -inset-0.5 rounded-full border-2 border-dashed border-(--lane) transition-opacity duration-150 ease-out motion-reduce:transition-none',
+                                    progress > 0 ? 'opacity-0' : 'opacity-100',
                                 )}
                             />
-                            <circle
-                                cx="24"
-                                cy="24"
-                                r="23"
-                                pathLength={1}
-                                strokeDasharray={1}
-                                strokeLinecap="round"
-                                strokeDashoffset={1 - Math.min(progress, 1)}
+                            <svg
+                                viewBox="0 0 48 48"
                                 className={cn(
-                                    isLive
-                                        ? 'stroke-red-600'
-                                        : 'stroke-(--lane)',
-                                    'transition-[stroke-dashoffset] duration-150 ease-out motion-reduce:transition-none',
+                                    'pointer-events-none absolute -inset-0.5 size-12 -rotate-90 transition-opacity duration-150 ease-out motion-reduce:transition-none',
+                                    progress > 0 ? 'opacity-100' : 'opacity-0',
                                 )}
-                            />
-                        </svg>
-                    </>
-                )}
-                <UserAvatar user={user} className="size-10" />
-            </span>
+                                fill="none"
+                                strokeWidth={2}
+                            >
+                                <circle
+                                    cx="24"
+                                    cy="24"
+                                    r="23"
+                                    className="stroke-(--lane) opacity-25"
+                                />
+                                <circle
+                                    cx="24"
+                                    cy="24"
+                                    r="23"
+                                    pathLength={1}
+                                    strokeDasharray={1}
+                                    strokeLinecap="round"
+                                    strokeDashoffset={1 - Math.min(progress, 1)}
+                                    className="stroke-(--lane) transition-[stroke-dashoffset] duration-150 ease-out motion-reduce:transition-none"
+                                />
+                            </svg>
+                        </>
+                    )}
+                    <UserAvatar user={user} className="size-10" />
+                </span>
+            )}
             {isLive && (
                 <LiveAvatarMarker className="px-1 text-[9px] leading-3.5" />
             )}
