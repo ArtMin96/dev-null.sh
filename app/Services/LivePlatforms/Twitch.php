@@ -29,7 +29,8 @@ final readonly class Twitch implements LivePlatformDriver
 
     /**
      * The stream link points to the channel page on Twitch.
-     * While a channel is live, its preview thumbnail is updated periodically.
+     * While a channel is live, its preview thumbnail is updated periodically. 640px wide is sharp on the 184px card at
+     * any density and close to 2x on the widest sheet, with a quarter of the pixels of 1280px.
      */
     public function stream(string $url, CarbonInterface $endsAt): LiveStream
     {
@@ -37,7 +38,7 @@ final readonly class Twitch implements LivePlatformDriver
 
         $link = "https://www.twitch.tv/{$channel}";
 
-        return new LiveStream(LivePlatform::Twitch, $link, "https://static-cdn.jtvnw.net/previews-ttv/live_user_{$channel}-1280x720.jpg", $endsAt, $this->players->for($link));
+        return new LiveStream(LivePlatform::Twitch, $link, "https://static-cdn.jtvnw.net/previews-ttv/live_user_{$channel}-640x360.jpg", $endsAt, $this->players->for($link));
     }
 
     /**

@@ -54,7 +54,7 @@ it('sends each live person with only what the rail draws, their stream and lates
         ->assertJsonPath('props.liveFollowing.0.lane', $live->lane())
         ->assertJsonPath('props.liveFollowing.0.live', [
             'url' => 'https://www.twitch.tv/octocat',
-            'thumbnail_url' => 'https://static-cdn.jtvnw.net/previews-ttv/live_user_octocat-1280x720.jpg',
+            'thumbnail_url' => 'https://static-cdn.jtvnw.net/previews-ttv/live_user_octocat-640x360.jpg',
             'platform' => 'twitch',
             'ends_at' => now()->addHours(2)->toIso8601ZuluString(),
             'embed' => [

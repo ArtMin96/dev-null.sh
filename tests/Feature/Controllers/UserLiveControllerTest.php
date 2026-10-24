@@ -61,7 +61,7 @@ it('goes live with a Twitch stream for a few hours', function (string $url): voi
         ->assertInertia(fn ($page) => $page
             ->where('user.live', [
                 'url' => 'https://www.twitch.tv/octocat',
-                'thumbnail_url' => 'https://static-cdn.jtvnw.net/previews-ttv/live_user_octocat-1280x720.jpg',
+                'thumbnail_url' => 'https://static-cdn.jtvnw.net/previews-ttv/live_user_octocat-640x360.jpg',
                 'platform' => 'twitch',
                 'ends_at' => now()->addHours(3)->toIso8601ZuluString(),
                 'embed' => [

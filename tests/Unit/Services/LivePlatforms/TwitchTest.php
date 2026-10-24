@@ -10,7 +10,7 @@ it('accepts links to a channel', function (string $url): void {
     expect($twitch->accepts($url))->toBeTrue()
         ->and($twitch->stream($url, now()->addHour())->toArray())->toMatchArray([
             'url' => 'https://www.twitch.tv/theprimeagen',
-            'thumbnail_url' => 'https://static-cdn.jtvnw.net/previews-ttv/live_user_theprimeagen-1280x720.jpg',
+            'thumbnail_url' => 'https://static-cdn.jtvnw.net/previews-ttv/live_user_theprimeagen-640x360.jpg',
             'platform' => 'twitch',
         ]);
 })->with([
