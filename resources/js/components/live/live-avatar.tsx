@@ -27,46 +27,33 @@ function ringGradient(lane: Lane): string {
 
 /**
  * The live look for anything round: a rotating conic ring in the lane's color with a gap before `children`. It
- * holds still when `spinning` is off and under reduced motion. The gap is see-through, so it sits on any surface,
- * and the ring only ever rotates, which the compositor does without repainting. `isGlowing` adds a soft halo for
- * the one that is selected.
+ * holds still under reduced motion. The gap is see-through, so it sits on any surface, and the ring only ever
+ * rotates, which the compositor does without repainting. `isGlowing` adds a soft halo for the one that is selected.
  */
-export function LiveRing({
+function LiveRing({
     lane,
-    spinning = true,
     isGlowing = false,
-    className,
     children,
 }: {
     lane: Lane;
-    spinning?: boolean;
     isGlowing?: boolean;
-    className?: string;
     children: ReactNode;
 }) {
-    const motion = spinning && 'motion-safe:animate-live-ring';
-
     return (
         <span
-            className={cn('relative flex shrink-0 rounded-full p-1', className)}
+            className="relative flex shrink-0 rounded-full p-1"
             style={{ '--live-ring': ringGradient(lane) } as CSSProperties}
             data-test="live-ring"
         >
             {isGlowing && (
                 <span
                     aria-hidden
-                    className={cn(
-                        'pointer-events-none absolute -inset-0.5 rounded-full bg-(image:--live-ring) opacity-50 blur-md',
-                        motion,
-                    )}
+                    className="pointer-events-none absolute -inset-0.5 rounded-full bg-(image:--live-ring) opacity-50 blur-md motion-safe:animate-live-ring"
                 />
             )}
             <span
                 aria-hidden
-                className={cn(
-                    'pointer-events-none absolute inset-0 live-ring',
-                    motion,
-                )}
+                className="pointer-events-none absolute inset-0 live-ring motion-safe:animate-live-ring"
             />
             <span className="relative flex rounded-full">{children}</span>
         </span>

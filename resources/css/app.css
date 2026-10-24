@@ -15,8 +15,8 @@
     background: var(--live-ring);
     mask: radial-gradient(
         farthest-side,
-        transparent calc(100% - var(--live-ring-width, 2px) - 0.5px),
-        black calc(100% - var(--live-ring-width, 2px))
+        transparent calc(100% - 2.5px),
+        black calc(100% - 2px)
     );
 }
 
